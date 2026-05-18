@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+
+# files
+mongo_test.py
+demo.py
+# folders
+logs
