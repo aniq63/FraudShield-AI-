@@ -224,4 +224,5 @@ mongo_test.py
 demo.py
 # folders
 logs
+models
 notebooks
