@@ -12,21 +12,27 @@ class DataIngestion:
     and returns it as a pandas DataFrame.
     """
 
-    def __init__(self, collection_name: str):
+    def __init__(self, collection_name: str, limit: int = None):
         self.mongo_client = MongoDBClient()
         self.collection = self.mongo_client.get_collection(collection_name)
+        self.limit = limit
 
     def fetch_data(self) -> pd.DataFrame:
         """
-        Fetch all documents from MongoDB collection
+        Fetch documents from MongoDB collection
         and convert them into pandas DataFrame.
         """
 
         try:
             logger.info("Starting data ingestion from MongoDB...")
 
-            # Fetch documents
-            records = list(self.collection.find())
+            # Fetch documents with optional limit
+            if self.limit:
+                logger.info(f"Ingesting up to {self.limit} records from MongoDB...")
+                records = list(self.collection.find().limit(self.limit))
+            else:
+                logger.info("Ingesting all records from MongoDB...")
+                records = list(self.collection.find())
 
             if not records:
                 raise ValueError("No records found in MongoDB collection")

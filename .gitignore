@@ -226,3 +226,6 @@ demo.py
 logs
 models
 notebooks
+mlruns
+artifacts
+mlflow.db

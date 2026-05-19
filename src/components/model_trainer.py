@@ -125,14 +125,18 @@ class ModelTrainer:
             logger.info(f"Best model saved: {model_path}")
 
             # upload to S3
-            s3 = S3Manager()
-
-            s3_path = s3.upload_file(
-                model_path,
-                f"models/{best_model_name}.pkl"
-            )
-
-            logger.info(f"Model uploaded to S3: {s3_path}")
+            try:
+                s3 = S3Manager()
+                s3_path = s3.upload_file(
+                    model_path,
+                    f"models/{best_model_name}.pkl"
+                )
+                logger.info(f"Model uploaded to S3: {s3_path}")
+            except Exception as s3_err:
+                logger.warning(
+                    f"S3 upload failed ({s3_err}). "
+                    "Proceeding with the locally saved model."
+                )
 
             return best_model, results
 

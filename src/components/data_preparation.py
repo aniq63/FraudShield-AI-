@@ -33,7 +33,10 @@ class DataPreparation:
                 "merchant_lat",
                 "merchant_long",
                 "transaction_amount",
-                "buyer_job"
+                "buyer_job",
+                "transaction_date",
+                "buyer_date_of_birth",
+                "transaction_time"
             ]
 
             self.df.drop(

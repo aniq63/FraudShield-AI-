@@ -9,7 +9,7 @@ class DataLoader:
     Loads processed ETL data into MongoDB Atlas.
     """
 
-    def __init__(self, collection_name: str):
+    def __init__(self, collection_name : str):
         self.mongo_client = MongoDBClient()
         self.collection = self.mongo_client.get_collection(collection_name)
 

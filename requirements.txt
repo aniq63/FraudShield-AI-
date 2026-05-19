@@ -1,3 +1,7 @@
 pymongo[srv]==3.12
 python-dotenv
 pandas
+xgboost
+scikit-learn
+mlflow
+boto3

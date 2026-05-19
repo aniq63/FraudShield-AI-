@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 import numpy as np
 
@@ -55,14 +56,17 @@ class DataTransformer:
 
     def process_datetime(self):
         try:
-            self.df["trans_date_trans_time"] = pd.to_datetime(
-                self.df["trans_date_trans_time"]
-            )
+            if "trans_date_trans_time" in self.df.columns:
+                self.df["trans_date_trans_time"] = pd.to_datetime(
+                    self.df["trans_date_trans_time"]
+                )
 
-            self.df["transaction_date"] = self.df["trans_date_trans_time"].dt.date
-            self.df["transaction_time"] = self.df["trans_date_trans_time"].dt.strftime('%H:%M:%S')
+                self.df["transaction_date"] = self.df["trans_date_trans_time"].dt.date
+                self.df["transaction_time"] = self.df["trans_date_trans_time"].dt.strftime('%H:%M:%S')
 
-            self.df.drop("trans_date_trans_time", axis=1, inplace=True)
+                self.df.drop("trans_date_trans_time", axis=1, inplace=True)
+            else:
+                logger.info("trans_date_trans_time not present. Skipping datetime extraction.")
 
             logger.info("Datetime processing completed.")
 
