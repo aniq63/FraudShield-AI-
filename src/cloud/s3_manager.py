@@ -49,3 +49,13 @@ class S3Manager:
             f"s3://{self.bucket_name}/"
             f"{s3_file_name}"
         )
+
+    def load_object(self, s3_file_name) -> bytes:
+        """
+        Download a file directly into memory as bytes.
+        """
+        response = self.s3_client.get_object(
+            Bucket=self.bucket_name,
+            Key=s3_file_name
+        )
+        return response["Body"].read()
