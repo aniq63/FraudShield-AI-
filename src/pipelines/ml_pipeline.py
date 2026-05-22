@@ -72,7 +72,7 @@ class MLPipeline:
                 X_test,
                 y_train,
                 y_test,
-                _
+                preprocessor
             ) = prep.prepare_data()
 
             logger.info("Data preparation completed")
@@ -86,7 +86,8 @@ class MLPipeline:
                 X_train,
                 X_test,
                 y_train,
-                y_test
+                y_test,
+                preprocessor=preprocessor
             )
 
             best_model, results = trainer.train_models()

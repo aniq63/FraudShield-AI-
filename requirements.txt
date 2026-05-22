@@ -5,3 +5,7 @@ xgboost
 scikit-learn
 mlflow
 boto3
+fastapi
+uvicorn
+langchain 
+langchain-groq

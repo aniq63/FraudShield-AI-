@@ -47,6 +47,8 @@ class DataPreparation:
 
             logger.info("Columns dropped successfully.")
 
+            return self.df
+
         except Exception as e:
             raise FraudShieldException(str(e), sys)
 
