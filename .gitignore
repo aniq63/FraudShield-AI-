@@ -225,7 +225,6 @@ demo.py
 # folders
 logs
 models
-notebooks
 mlruns
 artifacts
 mlflow.db

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Simulator — FraudShield AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700;900&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#222831;--panel:#393E46;--teal:#00ADB5;--teal-dim:rgba(0,173,181,.15);
+  --teal-glow:rgba(0,173,181,.4);--light:#EEEEEE;--muted:rgba(238,238,238,.45);
+  --danger:#ff4d6d;--danger-dim:rgba(255,77,109,.15);
+  --success:#3fdc84;--success-dim:rgba(63,220,132,.12);
+  --warn:#f5a623;
+  --mono:'Share Tech Mono',monospace;--sans:'Barlow',sans-serif;
+  --border:rgba(0,173,181,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%;background:var(--bg);color:var(--light);font-family:var(--sans)}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 4px)}
+.grid-bg{position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(0,173,181,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,173,181,.05) 1px,transparent 1px);
+  background-size:48px 48px;animation:grid-drift 20s linear infinite}
+@keyframes grid-drift{from{background-position:0 0}to{background-position:48px 48px}}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;
+  padding:18px 48px;background:rgba(34,40,49,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:18px;color:var(--teal)}
+.nav-logo span{color:var(--light)}
+.nav-links{display:flex;gap:32px;font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.nav-links a{color:var(--muted);text-decoration:none;transition:color .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--teal)}
+
+.page{position:relative;z-index:1;padding:100px 48px 64px;max-width:1400px;margin:0 auto}
+.page-header{margin-bottom:40px}
+.page-tag{font-family:var(--mono);font-size:12px;color:var(--teal);letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px}
+.page-title{font-size:42px;font-weight:900;letter-spacing:-.02em}
+.page-desc{margin-top:12px;color:var(--muted);font-size:14px;max-width:920px;line-height:1.5}
+
+/* ── two-col layout ── */
+.sim-layout{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:start}
+
+/* ── control panel ── */
+.control-panel{
+  background:var(--panel);border:1px solid var(--border);
+  padding:28px;display:flex;flex-direction:column;gap:24px;
+  position:sticky;top:90px;
+}
+.panel-section-title{
+  font-family:var(--mono);font-size:11px;color:var(--teal);
+  letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px;
+}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mode-btn{
+  background:transparent;border:1px solid var(--border);
+  padding:14px 10px;cursor:pointer;transition:all .18s;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  color:var(--muted);font-family:var(--sans);
+}
+.mode-btn .mode-icon{font-size:22px}
+.mode-btn .mode-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.mode-btn .mode-desc{font-size:10px;color:rgba(238,238,238,.3);text-align:center;line-height:1.4}
+.mode-btn:hover{border-color:var(--teal);background:var(--teal-dim);color:var(--light)}
+.mode-btn.selected{border-color:var(--teal);background:var(--teal-dim);color:var(--teal)}
+
+.slider-wrap{display:flex;flex-direction:column;gap:10px}
+.slider-row{display:flex;justify-content:space-between;align-items:center}
+.slider-label{font-size:14px;font-weight:600}
+.slider-val{font-family:var(--mono);font-size:18px;color:var(--teal)}
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;
+  background:var(--border);outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:var(--teal);cursor:pointer;box-shadow:0 0 8px var(--teal-glow);
+}
+
+.run-btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--teal);color:#000;border:none;padding:16px;
+  font-family:var(--sans);font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;
+}
+.run-btn:hover:not(:disabled){background:#00c8d1;box-shadow:0 0 24px var(--teal-glow)}
+.run-btn:disabled{opacity:.45;cursor:not-allowed}
+
+.reset-btn{
+  background:transparent;border:1px solid rgba(238,238,238,.2);color:var(--muted);
+  padding:10px;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;
+}
+.reset-btn:hover{border-color:var(--danger);color:var(--danger)}
+
+/* ── status bar ── */
+.status-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel);border:1px solid var(--border);padding:12px 18px;
+  font-family:var(--mono);font-size:13px;margin-bottom:16px;
+}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:8px;display:inline-block}
+.status-dot.running{background:var(--teal);animation:pulse-dot 1s ease infinite}
+.status-dot.done{background:var(--success)}
+.status-dot.error{background:var(--danger)}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── progress ── */
+.progress-wrap{margin-bottom:16px}
+.progress-header{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:6px}
+.progress-track{height:3px;background:rgba(0,173,181,.15);overflow:hidden}
+.progress-fill{height:100%;background:var(--teal);width:0%;transition:width .3s ease;box-shadow:0 0 8px var(--teal)}
+
+/* ── raw transactions table ── */
+.section-label{
+  font-family:var(--mono);font-size:11px;color:var(--teal);
+  letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.count-badge{
+  background:var(--teal-dim);color:var(--teal);
+  font-size:10px;padding:2px 8px;border:1px solid rgba(0,173,181,.3);
+}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);padding:8px 10px;text-align:left;
+  border-bottom:1px solid var(--border);font-weight:400;
+}
+.data-table td{
+  padding:9px 10px;border-bottom:1px solid rgba(0,173,181,.07);
+  font-family:var(--mono);font-size:12px;vertical-align:middle;
+}
+.data-table tr:hover td{background:rgba(0,173,181,.04)}
+.tag{display:inline-block;padding:2px 8px;font-size:10px;font-weight:700;letter-spacing:.06em;border-radius:1px}
+.tag-blocked{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(255,77,109,.25)}
+.tag-approved{background:var(--success-dim);color:var(--success);border:1px solid rgba(63,220,132,.2)}
+.tag-mode{background:rgba(0,173,181,.1);color:var(--teal);border:1px solid rgba(0,173,181,.2)}
+.tag-pending{background:rgba(238,238,238,.06);color:var(--muted);border:1px solid rgba(238,238,238,.1)}
+
+.prob-bar{display:flex;align-items:center;gap:8px}
+.prob-track{width:60px;height:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.prob-fill{height:100%;transition:width .4s ease}
+.prob-high{background:var(--danger)}
+.prob-low{background:var(--success)}
+
+/* ── result panels ── */
+.results-wrap{display:flex;flex-direction:column;gap:12px}
+.result-card{
+  background:var(--panel);border-left:3px solid transparent;padding:16px 18px;
+  animation:slide-in .3s ease both;transition:border-color .2s;
+}
+.result-card.blocked{border-left-color:var(--danger)}
+.result-card.approved{border-left-color:var(--success)}
+@keyframes slide-in{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+.rc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.rc-meta{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.rc-meta strong{color:var(--light);font-size:14px;display:block;margin-bottom:3px}
+.rc-score{text-align:right}
+.rc-score .score-val{font-family:var(--mono);font-size:22px;font-weight:400}
+.rc-score .score-val.high{color:var(--danger)}
+.rc-score .score-val.low{color:var(--success)}
+.rc-score .score-label{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.rc-reasoning{
+  font-size:12px;color:var(--muted);line-height:1.7;
+  border-top:1px solid var(--border);padding-top:10px;margin-top:10px;
+  font-family:var(--mono);white-space:pre-wrap;
+}
+.rc-latency{font-family:var(--mono);font-size:10px;color:rgba(0,173,181,.6);margin-top:8px}
+
+/* ── empty state ── */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:80px 20px;color:var(--muted);text-align:center;gap:16px;
+  border:1px dashed var(--border);
+}
+.empty-icon{font-size:40px;opacity:.4}
+.empty-text{font-size:14px;font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<nav>
+  <div class="nav-logo">
+    <svg width="24" height="24" fill="none" stroke="#00ADB5" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6L12 2z"/><path d="M9 12l2 2 4-4"/></svg>
+    FRAUD<span>SHIELD</span>
+  </div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="simulator.html" class="active">Simulator</a>
+    <a href="dashboard.html">Dashboard</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div class="page-tag">// transaction simulator</div>
+    <div class="page-title">ATTACK SIMULATOR</div>
+    <div class="page-desc">Use this simulator to generate synthetic transactions and exercise the FraudShield prediction pipeline. Choose an attack mode and the number of transactions; the system will randomly generate transactions matching your selection and send them to the model for prediction and reasoning. Results appear in the right-hand panel with fraud scores and suggested actions.</div>
+  </div>
+
+  <div class="sim-layout">
+
+    <!-- ── LEFT: Controls ── -->
+    <div class="control-panel">
+      <div>
+        <div class="panel-section-title">01 — select attack mode</div>
+        <div class="mode-grid">
+          <button class="mode-btn selected" data-mode="normal">
+            <span class="mode-icon">🟢</span>
+            <span class="mode-label">Normal</span>
+            <span class="mode-desc">Baseline transaction behaviour</span>
+          </button>
+          <button class="mode-btn" data-mode="stolen_card">
+            <span class="mode-icon">💳</span>
+            <span class="mode-label">Stolen Card</span>
+            <span class="mode-desc">High-value irregular purchases</span>
+          </button>
+          <button class="mode-btn" data-mode="geo_attack">
+            <span class="mode-icon">🌍</span>
+            <span class="mode-label">Geo Attack</span>
+            <span class="mode-desc">Impossible location anomaly</span>
+          </button>
+          <button class="mode-btn" data-mode="velocity_burst">
+            <span class="mode-icon">⚡</span>
+            <span class="mode-label">Velocity Burst</span>
+            <span class="mode-desc">Rapid late-night transactions</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="slider-wrap">
+        <div class="panel-section-title">02 — number of transactions</div>
+        <div class="slider-row">
+          <span class="slider-label">Count</span>
+          <span class="slider-val" id="count-display">10</span>
+        </div>
+        <input type="range" id="count-slider" min="1" max="100" value="10"/>
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted)">
+          <span>1</span><span>25</span><span>50</span><span>75</span><span>100</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel-section-title">03 — execute</div>
+        <button class="run-btn" id="run-btn">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          RUN SIMULATION
+        </button>
+      </div>
+
+      <button class="reset-btn" id="reset-btn">↺ CLEAR SESSION</button>
+    </div>
+
+    <!-- ── RIGHT: Output ── -->
+    <div>
+      <!-- status + progress -->
+      <div class="status-bar">
+        <div style="display:flex;align-items:center">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text" style="color:var(--muted)">Idle — configure and run a simulation</span>
+        </div>
+        <span id="status-counts" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+      <div class="progress-wrap" id="progress-wrap" style="display:none">
+        <div class="progress-header">
+          <span>Processing predictions</span>
+          <span id="progress-label">0 / 0</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      </div>
+
+      <!-- generated transactions -->
+      <div id="raw-section" style="display:none;margin-bottom:24px">
+        <div class="section-label">
+          Generated transactions
+          <span class="count-badge" id="raw-count">0</span>
+        </div>
+        <div style="overflow-x:auto;border:1px solid var(--border)">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th><th>amount</th><th>category</th>
+                <th>hour</th><th>gender</th><th>mode</th><th>prediction</th>
+              </tr>
+            </thead>
+            <tbody id="raw-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- prediction results -->
+      <div id="results-section" style="display:none">
+        <div class="section-label">
+          Prediction results
+          <span class="count-badge" id="results-count">0</span>
+        </div>
+        <div class="results-wrap" id="results-wrap"></div>
+      </div>
+
+      <!-- empty -->
+      <div class="empty-state" id="empty-state">
+        <span class="empty-icon">⬡</span>
+        <span class="empty-text">No simulation running.<br/>Configure attack mode and hit RUN.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let selectedMode = 'normal';
+let currentTotal = 0;
+let receivedCount = 0;
+let rawRows = {};   // idx → tr element for updating prediction column
+let sseSource = null;
+
+// ── mode selection ────────────────────────────────────────────────────────
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedMode = btn.dataset.mode;
+  });
+});
+
+// ── slider ────────────────────────────────────────────────────────────────
+const slider = document.getElementById('count-slider');
+const countDisplay = document.getElementById('count-display');
+slider.addEventListener('input', () => { countDisplay.textContent = slider.value; });
+
+// ── RUN ───────────────────────────────────────────────────────────────────
+document.getElementById('run-btn').addEventListener('click', runSimulation);
+
+async function runSimulation() {
+  const n = parseInt(slider.value);
+  currentTotal = n;
+  receivedCount = 0;
+  rawRows = {};
+
+  setStatus('running', `Generating ${n} transactions…`);
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('empty-state').style.display = 'none';
+
+  // show progress
+  document.getElementById('progress-wrap').style.display = 'block';
+  setProgress(0, n);
+
+  // clear previous results
+  document.getElementById('raw-tbody').innerHTML = '';
+  document.getElementById('results-wrap').innerHTML = '';
+  document.getElementById('raw-section').style.display = 'none';
+  document.getElementById('results-section').style.display = 'none';
+
+  // close previous SSE
+  if (sseSource) { sseSource.close(); sseSource = null; }
+
+  try {
+    // 1. POST /simulate — get raw transactions
+    const res = await fetch(`${API}/simulate`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({mode: selectedMode, num_transactions: n})
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Server error');
+    }
+    const data = await res.json();
+
+    // 2. Show raw transactions immediately
+    renderRawTransactions(data.transactions);
+    setStatus('running', `Predicting ${n} transactions…`);
+
+    // 3. Open SSE stream for results
+    openSSEStream(n);
+
+  } catch(e) {
+    setStatus('error', `Error: ${e.message}`);
+    document.getElementById('run-btn').disabled = false;
+  }
+}
+
+function renderRawTransactions(transactions) {
+  const tbody = document.getElementById('raw-tbody');
+  document.getElementById('raw-section').style.display = 'block';
+  document.getElementById('raw-count').textContent = transactions.length;
+
+  transactions.forEach((txn, i) => {
+    const tr = document.createElement('tr');
+    const amt = parseFloat(txn.transaction_amount || 0);
+    tr.innerHTML = `
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="color:var(--light);font-weight:600">$${amt.toLocaleString('en', {minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="color:var(--muted)">${txn.category || '—'}</td>
+      <td style="color:var(--muted)">${txn.transaction_hour != null ? txn.transaction_hour+':00' : '—'}</td>
+      <td style="color:var(--muted)">${txn.buyer_gender || '—'}</td>
+      <td><span class="tag tag-mode">${(txn.simulation_mode||'').replace('_',' ')}</span></td>
+      <td id="pred-${i}"><span class="tag tag-pending">pending…</span></td>
+    `;
+    tbody.appendChild(tr);
+    rawRows[i] = i; // track by index
+  });
+}
+
+function openSSEStream(total) {
+  sseSource = new EventSource(`${API}/simulate/stream`);
+
+  sseSource.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.type === 'connected') return;
+    if (data.type !== 'result') return;
+
+    receivedCount++;
+    setProgress(receivedCount, total);
+    renderResult(data, receivedCount - 1);
+
+    if (receivedCount >= total) {
+      sseSource.close();
+      sseSource = null;
+      setStatus('done', `Complete — ${total} transactions processed`);
+      document.getElementById('run-btn').disabled = false;
+      document.getElementById('progress-wrap').style.display = 'none';
+    }
+  };
+
+  sseSource.onerror = () => {
+    if (receivedCount >= total) return; // already done
+    setStatus('error', 'Stream error — check API server');
+    document.getElementById('run-btn').disabled = false;
+  };
+}
+
+function renderResult(result, idx) {
+  const isBlocked = result.decision === 'BLOCKED';
+  const prob = result.fraud_probability || 0;
+  const txn = result.transaction || {};
+
+  // update the pending tag in the raw table
+  const predCell = document.getElementById(`pred-${idx}`);
+  if (predCell) {
+    predCell.innerHTML = isBlocked
+      ? `<span class="tag tag-blocked">BLOCKED ${prob.toFixed(3)}</span>`
+      : `<span class="tag tag-approved">APPROVED ${prob.toFixed(3)}</span>`;
+  }
+
+  // show results section
+  document.getElementById('results-section').style.display = 'block';
+  const wrap = document.getElementById('results-wrap');
+  document.getElementById('results-count').textContent = receivedCount;
+
+  const card = document.createElement('div');
+  card.className = `result-card ${isBlocked ? 'blocked' : 'approved'}`;
+  card.style.animationDelay = '0s';
+
+  const probPct = (prob * 100).toFixed(1);
+  const scoreClass = prob >= 0.5 ? 'high' : 'low';
+  const amt = parseFloat(txn.transaction_amount || 0);
+
+  card.innerHTML = `
+    <div class="rc-header">
+      <div class="rc-meta">
+        <strong>$${amt.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})} · ${txn.category||'—'}</strong>
+        <span class="tag ${isBlocked?'tag-blocked':'tag-approved'}" style="margin-right:6px">${result.decision}</span>
+        <span class="tag tag-mode">${(result.simulation_mode||'').replace('_',' ')}</span>
+      </div>
+      <div class="rc-score">
+        <div class="score-val ${scoreClass}">${probPct}%</div>
+        <div class="score-label">fraud score</div>
+      </div>
+    </div>
+    ${result.reasoning ? `<div class="rc-reasoning">${escHtml(result.reasoning)}</div>` : ''}
+    <div class="rc-latency">⏱ ${result.latency_ms}ms</div>
+  `;
+  wrap.prepend(card); // most recent on top
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────
+document.getElementById('reset-btn').addEventListener('click', async () => {
+  if (sseSource) { sseSource.close(); sseSource = null; }
+  await fetch(`${API}/dashboard/reset`, {method:'POST'}).catch(()=>{});
+  document.getElementById('raw-tbody').innerHTML = '';
+  document.getElementById('results-wrap').innerHTML = '';
+  document.getElementById('raw-section').style.display = 'none';
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('progress-wrap').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'flex';
+  document.getElementById('run-btn').disabled = false;
+  setStatus('', 'Idle — session cleared');
+});
+
+// ── helpers ───────────────────────────────────────────────────────────────
+function setStatus(type, msg) {
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  dot.className = 'status-dot';
+  if (type === 'running') dot.classList.add('running');
+  else if (type === 'done') dot.classList.add('done');
+  else if (type === 'error') dot.classList.add('error');
+  text.textContent = msg;
+  text.style.color = type === 'error' ? 'var(--danger)' : type === 'done' ? 'var(--success)' : 'var(--muted)';
+}
+function setProgress(done, total) {
+  const pct = total > 0 ? (done/total*100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `${done} / ${total}`;
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

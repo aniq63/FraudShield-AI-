@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FraudShield AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700;900&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:        #222831;
+  --panel:     #393E46;
+  --teal:      #00ADB5;
+  --teal-dim:  rgba(0,173,181,.18);
+  --teal-glow: rgba(0,173,181,.45);
+  --light:     #EEEEEE;
+  --muted:     rgba(238,238,238,.45);
+  --danger:    #ff4d6d;
+  --success:   #3fdc84;
+  --mono:      'Share Tech Mono', monospace;
+  --sans:      'Barlow', sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg);color:var(--light);font-family:var(--sans);overflow-x:hidden}
+
+/* ── scanline texture ── */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);
+}
+
+/* ── animated grid bg ── */
+.grid-bg{
+  position:fixed;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(0,173,181,.06) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,173,181,.06) 1px,transparent 1px);
+  background-size:48px 48px;
+  animation:grid-drift 20s linear infinite;
+}
+@keyframes grid-drift{from{background-position:0 0}to{background-position:48px 48px}}
+
+/* ── nav ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 48px;
+  background:rgba(34,40,49,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(0,173,181,.2);
+}
+.nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:18px;color:var(--teal)}
+.nav-logo span{color:var(--light)}
+.shield-icon{width:28px;height:28px;fill:none;stroke:var(--teal);stroke-width:2}
+.nav-links{display:flex;gap:32px;font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.nav-links a{color:var(--muted);text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:var(--teal)}
+
+/* ── hero ── */
+.hero{
+  position:relative;z-index:1;
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:120px 48px 80px;text-align:center;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid rgba(0,173,181,.4);border-radius:2px;
+  padding:6px 16px;font-family:var(--mono);font-size:12px;color:var(--teal);
+  margin-bottom:32px;letter-spacing:.1em;
+  animation:fade-in .6s ease both;
+}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse-dot 1.4s ease infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+
+.hero h1{
+  font-size:clamp(52px,9vw,100px);font-weight:900;line-height:.95;
+  letter-spacing:-.03em;
+  animation:fade-up .7s .1s ease both;
+}
+.hero h1 em{font-style:normal;color:var(--teal);display:block}
+.hero-sub{
+  max-width:560px;margin:28px auto 0;
+  font-size:18px;font-weight:300;color:var(--muted);line-height:1.6;
+  animation:fade-up .7s .2s ease both;
+}
+.hero-actions{
+  display:flex;gap:16px;margin-top:48px;
+  animation:fade-up .7s .3s ease both;
+}
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:14px 32px;font-family:var(--sans);font-size:15px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;text-decoration:none;
+  border:none;cursor:pointer;transition:all .2s;border-radius:2px;
+}
+.btn-primary{
+  background:var(--teal);color:#000;
+}
+.btn-primary:hover{background:#00c8d1;box-shadow:0 0 32px var(--teal-glow);transform:translateY(-2px)}
+.btn-ghost{
+  background:transparent;color:var(--light);border:1px solid rgba(238,238,238,.25);
+}
+.btn-ghost:hover{border-color:var(--teal);color:var(--teal);transform:translateY(-2px)}
+
+@keyframes fade-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+
+/* ── ticker ── */
+.ticker{
+  position:relative;z-index:1;
+  border-top:1px solid rgba(0,173,181,.15);
+  border-bottom:1px solid rgba(0,173,181,.15);
+  padding:12px 0;overflow:hidden;background:rgba(57,62,70,.4);
+  margin-bottom:80px;
+}
+.ticker-inner{
+  display:flex;gap:64px;white-space:nowrap;
+  animation:ticker-scroll 22s linear infinite;
+  font-family:var(--mono);font-size:13px;color:var(--muted);
+}
+.ticker-item{display:inline-flex;align-items:center;gap:10px}
+.ticker-item .t-blocked{color:var(--danger)}
+.ticker-item .t-approved{color:var(--success)}
+@keyframes ticker-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── features ── */
+.features{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  max-width:1100px;margin:0 auto;
+  background:rgba(0,173,181,.12);
+  border:1px solid rgba(0,173,181,.12);
+}
+.feature{
+  background:var(--bg);padding:40px 36px;
+  transition:background .2s;
+}
+.feature:hover{background:var(--panel)}
+.feature-num{font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:.15em;margin-bottom:16px}
+.feature h3{font-size:22px;font-weight:700;margin-bottom:10px}
+.feature p{font-size:15px;color:var(--muted);line-height:1.6}
+
+/* ── stats strip ── */
+.stats-strip{
+  position:relative;z-index:1;
+  display:flex;justify-content:center;gap:80px;
+  padding:64px 48px;
+  animation:fade-up .7s .4s ease both;
+}
+.stat-item{text-align:center}
+.stat-value{font-family:var(--mono);font-size:40px;color:var(--teal);line-height:1}
+.stat-label{font-size:13px;color:var(--muted);margin-top:6px;letter-spacing:.08em;text-transform:uppercase}
+
+/* ── footer ── */
+footer{
+  position:relative;z-index:1;
+  text-align:center;padding:32px;
+  font-family:var(--mono);font-size:12px;color:rgba(238,238,238,.25);
+  border-top:1px solid rgba(0,173,181,.1);
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<nav>
+  <div class="nav-logo">
+    <svg class="shield-icon" viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6L12 2z"/><path d="M9 12l2 2 4-4"/></svg>
+    FRAUD<span>SHIELD</span>
+  </div>
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="simulator.html">Simulator</a>
+    <a href="dashboard.html">Dashboard</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge"><span class="badge-dot"></span>SYSTEM ONLINE — REAL-TIME DETECTION ACTIVE</div>
+  <h1>FRAUD<em>SHIELD AI</em></h1>
+  <p class="hero-sub">Real-time financial fraud detection powered by XGBoost + LLM reasoning. Streaming ML predictions at sub-100ms latency.</p>
+  <div class="hero-actions">
+    <a href="simulator.html" class="btn btn-primary">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Run Simulation
+    </a>
+    <a href="dashboard.html" class="btn btn-ghost">View Dashboard</a>
+  </div>
+</div>
+
+<!-- live ticker -->
+<div class="ticker">
+  <div class="ticker-inner" id="ticker">
+    <span class="ticker-item">TXN #18823 · $4,200 · travel · <span class="t-blocked">BLOCKED 0.97</span></span>
+    <span class="ticker-item">TXN #18824 · $38 · grocery_pos · <span class="t-approved">APPROVED 0.02</span></span>
+    <span class="ticker-item">TXN #18825 · $7,419 · shopping_net · <span class="t-blocked">BLOCKED 0.88</span></span>
+    <span class="ticker-item">TXN #18826 · $112 · food_dining · <span class="t-approved">APPROVED 0.05</span></span>
+    <span class="ticker-item">TXN #18827 · $5,779 · misc_net · <span class="t-blocked">BLOCKED 0.76</span></span>
+    <span class="ticker-item">TXN #18828 · $22 · gas_transport · <span class="t-approved">APPROVED 0.01</span></span>
+    <span class="ticker-item">TXN #18829 · $9,100 · travel · <span class="t-blocked">BLOCKED 0.94</span></span>
+    <span class="ticker-item">TXN #18823 · $4,200 · travel · <span class="t-blocked">BLOCKED 0.97</span></span>
+    <span class="ticker-item">TXN #18824 · $38 · grocery_pos · <span class="t-approved">APPROVED 0.02</span></span>
+    <span class="ticker-item">TXN #18825 · $7,419 · shopping_net · <span class="t-blocked">BLOCKED 0.88</span></span>
+    <span class="ticker-item">TXN #18826 · $112 · food_dining · <span class="t-approved">APPROVED 0.05</span></span>
+    <span class="ticker-item">TXN #18827 · $5,779 · misc_net · <span class="t-blocked">BLOCKED 0.76</span></span>
+    <span class="ticker-item">TXN #18828 · $22 · gas_transport · <span class="t-approved">APPROVED 0.01</span></span>
+    <span class="ticker-item">TXN #18829 · $9,100 · travel · <span class="t-blocked">BLOCKED 0.94</span></span>
+  </div>
+</div>
+
+<div class="stats-strip">
+  <div class="stat-item"><div class="stat-value">98ms</div><div class="stat-label">avg latency</div></div>
+  <div class="stat-item"><div class="stat-value">4</div><div class="stat-label">attack modes</div></div>
+  <div class="stat-item"><div class="stat-value">XGB</div><div class="stat-label">ML model</div></div>
+  <div class="stat-item"><div class="stat-value">LLM</div><div class="stat-label">reasoning</div></div>
+</div>
+
+<div class="features">
+  <div class="feature"><div class="feature-num">01 / PIPELINE</div><h3>Streaming Predictions</h3><p>Every transaction flows through an in-memory queue, processed one-by-one with results pushed live via Server-Sent Events.</p></div>
+  <div class="feature"><div class="feature-num">02 / MODEL</div><h3>XGBoost + Feature Eng.</h3><p>Haversine distance, log-amount transforms, night-hour flags, and velocity signals feed a model trained with class-imbalance handling.</p></div>
+  <div class="feature"><div class="feature-num">03 / REASONING</div><h3>LLM Explanations</h3><p>Every blocked transaction gets a structured fraud analysis report from Groq LLaMA — decision, risk factors, recommended action.</p></div>
+</div>
+
+<footer>FRAUDSHIELD AI · BUILT FOR REAL-TIME FRAUD DETECTION · © 2026</footer>
+</body>
+</html>
