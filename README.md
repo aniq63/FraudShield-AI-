@@ -1,4 +1,4 @@
-# 🛡️ FraudShield AI – Real-Time Fraud Detection System
+# FraudShield AI – Real-Time Fraud Detection System
 
 <div align="center">
 
@@ -14,7 +14,15 @@
 
 ---
 
-## 📋 Overview
+## Live Demo
+
+**[Try FraudShield AI Now](https://fraudshields-ai.vercel.app/)** – https://fraudshields-ai.vercel.app/
+
+Explore the real-time dashboard, run transaction simulations, and see fraud detection in action!
+
+---
+
+## � Overview
 
 **FraudShield AI** is a production-ready fraud detection system that monitors financial transactions in real-time and predicts whether a transaction is fraudulent before approval. The system combines:
 
@@ -166,6 +174,8 @@ OUTPUT LAYER
 ---
 
 ## 📦 Installation
+
+> **💡 Want to try it first?** Check out the [live demo](https://fraudshields-ai.vercel.app/) to see FraudShield AI in action before installing locally!
 
 ### Prerequisites
 - Python 3.8+
