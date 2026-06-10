@@ -228,3 +228,4 @@ models
 mlruns
 artifacts
 mlflow.db
+resume.txt
