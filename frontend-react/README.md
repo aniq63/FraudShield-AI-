@@ -2,6 +2,18 @@
 
 A modern React application for real-time fraud detection dashboard and simulator.
 
+**✨ Production backend URL is already configured - just deploy!**
+
+## Quick Start
+
+```bash
+npm install -g vercel    # Install once
+cd frontend-react
+vercel                   # Deploy in ~1 minute
+```
+
+**See [QUICKSTART.md](QUICKSTART.md) for fastest setup** or [CONFIGURATION.md](CONFIGURATION.md) for detailed configuration info.
+
 ## Features
 
 - **Real-time Dashboard**: Monitor fraud detection statistics and live transactions
@@ -13,7 +25,7 @@ A modern React application for real-time fraud detection dashboard and simulator
 ## Prerequisites
 
 - Node.js 16+ and npm
-- Backend API running at: `https://fraudshield-ai-production-78c0.up.railway.app`
+- Backend API running at: `https://fraudshield-ai-production-78c0.up.railway.app` ✅ (already configured!)
 
 ## Installation
 
@@ -23,10 +35,9 @@ A modern React application for real-time fraud detection dashboard and simulator
    npm install
    ```
 
-2. **Create environment file** (`.env`):
-   ```
-   VITE_API_URL=https://fraudshield-ai-production-78c0.up.railway.app
-   ```
+2. **No configuration needed!**
+   - Backend URL is already set in `src/config/api.config.js`
+   - Optional: Create `.env.local` to override locally
 
 ## Development
 
@@ -50,7 +61,7 @@ This creates an optimized production build in the `dist/` directory.
 
 ## Deployment to Vercel
 
-### Method 1: Using Vercel CLI
+### Method 1: Using Vercel CLI (Recommended)
 
 1. **Install Vercel CLI**:
    ```bash
@@ -63,10 +74,11 @@ This creates an optimized production build in the `dist/` directory.
    vercel
    ```
 
-3. **Configure environment variables** in Vercel dashboard:
-   - Set `VITE_API_URL` to your production backend URL
+3. **Done!** ✅
+   - No environment variables needed (already configured in code)
+   - Your frontend is live in ~1 minute
 
-### Method 2: GitHub Integration (Recommended)
+### Method 2: GitHub Integration
 
 1. **Push to GitHub**:
    ```bash
@@ -91,16 +103,15 @@ This creates an optimized production build in the `dist/` directory.
 
 ### Vercel Dashboard Configuration
 
-In the Vercel project settings:
-
 **Build & Development Settings**:
 - Build Command: `npm run build`
 - Output Directory: `dist`
 - Install Command: `npm install`
 
-**Environment Variables**:
+**Environment Variables** (Optional):
+- Only set if you want to override the production URL
 - Key: `VITE_API_URL`
-- Value: `https://fraudshield-ai-production-78c0.up.railway.app`
+- Value: Your backend URL (the default is already configured!)
 
 ## Project Structure
 

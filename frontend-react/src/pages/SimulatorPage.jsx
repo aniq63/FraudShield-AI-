@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { runSimulation, resetDashboard, createSSEStream } from '../utils/api';
+import { API_URL } from '../config/api.config';
 import '../styles/SimulatorPage.css';
 
 function SimulatorPage() {
@@ -27,7 +28,7 @@ function SimulatorPage() {
       });
 
       // Open SSE stream
-      const url = import.meta.env.VITE_API_URL || 'https://fraudshield-ai-production-78c0.up.railway.app';
+      const url = API_URL;
       sseRef.current = new EventSource(`${url}/simulate/stream`);
 
       sseRef.current.onmessage = (e) => {
