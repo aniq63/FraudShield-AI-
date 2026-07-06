@@ -22,7 +22,7 @@ Explore the real-time dashboard, run transaction simulations, and see fraud dete
 
 ---
 
-## � Overview
+## Overview
 
 **FraudShield AI** is a production-ready fraud detection system that monitors financial transactions in real-time and predicts whether a transaction is fraudulent before approval. The system combines:
 
@@ -35,14 +35,14 @@ Explore the real-time dashboard, run transaction simulations, and see fraud dete
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🚀 Real-Time Processing
+### Real-Time Processing
 - **Sub-second latency** fraud detection for production transactions
 - **Streaming pipeline** with multi-threaded consumer-producer architecture
 - **Live dashboards** with real-time transaction updates via SSE (Server-Sent Events)
 
-### 🧠 Intelligent Detection
+### Intelligent Detection
 - **Multi-model ensemble** (XGBoost, Random Forest, Logistic Regression)
 - **Advanced feature engineering** including:
   - Geographical distance calculation
@@ -52,20 +52,20 @@ Explore the real-time dashboard, run transaction simulations, and see fraud dete
 - **LLM-powered reasoning** for explainable fraud decisions
 - **Class imbalance handling** with weighted sampling
 
-### 📊 Comprehensive Monitoring
+### Comprehensive Monitoring
 - **Live dashboard** with transaction statistics and fraud metrics
 - **Historical analytics** with fraud trends and patterns
 - **MLflow integration** for experiment tracking and model versioning
 - **In-memory result store** with SSE real-time streaming
 
-### 🔐 Production-Ready
+### Production-Ready
 - **Containerizable architecture** with FastAPI
 - **CORS-enabled** for frontend integration
 - **Error handling and logging** throughout the pipeline
 - **Scalable database design** with MongoDB
 - **Cloud storage** with AWS S3 for models
 
-### 🎮 Transaction Simulation
+### Transaction Simulation
 Multiple transaction generation modes for realistic testing:
 - **Normal transactions**: Everyday legitimate purchases
 - **Stolen card attacks**: High-value unauthorized transactions
@@ -74,7 +74,7 @@ Multiple transaction generation modes for realistic testing:
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -115,7 +115,7 @@ OUTPUT LAYER
 
 ---
 
-## 💾 Dataset
+## Dataset
 
 **Dataset**: [Fraud Detection - Kaggle](https://www.kaggle.com/datasets/kartik2112/fraud-detection)
 
@@ -139,7 +139,7 @@ OUTPUT LAYER
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend & ML
 | Technology | Purpose |
@@ -173,9 +173,9 @@ OUTPUT LAYER
 
 ---
 
-## 📦 Installation
+## Installation
 
-> **💡 Want to try it first?** Check out the [live demo](https://fraudshields-ai.vercel.app/) to see FraudShield AI in action before installing locally!
+> **Want to try it first?** Check out the [live demo](https://fraudshields-ai.vercel.app/) to see FraudShield AI in action before installing locally!
 
 ### Prerequisites
 - Python 3.8+
@@ -230,7 +230,7 @@ OUTPUT LAYER
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ### 1. **Run Demo (Console Output)**
 ```bash
@@ -275,7 +275,7 @@ curl "http://localhost:8000/results"
 
 ---
 
-## 📊 Dashboard Previews
+## Dashboard Previews
 
 ### Dashboard Overview
 ![Dashboard](images/C1.PNG)
@@ -288,7 +288,7 @@ curl "http://localhost:8000/results"
 
 ---
 
-## 🧪 Model Performance
+## Model Performance
 
 ### Training Metrics
 - **Best Model**: XGBoost with balanced class weights
@@ -304,7 +304,7 @@ curl "http://localhost:8000/results"
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 FraudShield-AI/
@@ -351,7 +351,7 @@ FraudShield-AI/
 
 ---
 
-## 🔄 Pipeline Overview
+## Pipeline Overview
 
 ### ML Pipeline Stages:
 1. **Data Extraction** → Fetch from MongoDB
@@ -372,7 +372,7 @@ FraudShield-AI/
 
 ---
 
-## 🐳 Docker Deployment (Optional)
+## Docker Deployment (Optional)
 
 ```dockerfile
 FROM python:3.11-slim
@@ -400,7 +400,7 @@ docker run -p 8000:8000 --env-file .env fraudshield-ai
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 ```
 MONGO_URI=mongodb+srv://user:password@cluster.mongodb.net/fraudshield
@@ -417,7 +417,7 @@ ALLOWED_ORIGINS=*
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please follow these steps:
 
@@ -429,13 +429,13 @@ Contributions are welcome! Please follow these steps:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙋 Support & Contact
+## Support & Contact
 
 For questions, issues, or suggestions:
 - **GitHub Issues**: Open an issue on the repository
@@ -443,7 +443,7 @@ For questions, issues, or suggestions:
 
 ---
 
-## 🎓 Learning Resources
+## Learning Resources
 
 - [XGBoost Documentation](https://xgboost.readthedocs.io/)
 - [FastAPI Guide](https://fastapi.tiangolo.com/)
