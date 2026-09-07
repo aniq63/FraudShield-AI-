@@ -10,8 +10,6 @@
 
 FraudShield AI processes simulated financial transactions through a trained fraud model, streams results to a browser dashboard, and generates an explanation for blocked transactions through Groq and LangChain.
 
-### Live App : https://fraud-shield-ai-gx2w.vercel.app/
-
 ## What It Does
 
 - Loads sampled train and test data from `datasource/`.

@@ -355,9 +355,7 @@ nav{height:68px;padding:0 32px;background:rgba(11,17,24,.96);border-bottom-color
 </div>
 
 <script>
-const API = (window.location.protocol === 'file:' || ['localhost', '127.0.0.1'].includes(window.location.hostname))
-  ? 'http://127.0.0.1:8000'
-  : 'https://fraudshield-ai-production-510a.up.railway.app';
+const API = 'http://127.0.0.1:8000';
 
 // ── state ──────────────────────────────────────────────────────────────────
 let fraudRateHistory = [];  // for sparkline
