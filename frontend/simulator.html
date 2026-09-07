@@ -382,11 +382,15 @@ async function runSimulation() {
   document.getElementById('raw-section').style.display = 'none';
   document.getElementById('results-section').style.display = 'none';
 
-  // close previous SSE
+  // Connect before submitting the batch. The backend consumer is fast enough
+  // to finish a transaction before a late SSE subscriber could receive it.
   if (sseSource) { sseSource.close(); sseSource = null; }
 
   try {
-    // 1. POST /simulate — get raw transactions
+    // 1. Open SSE first so no prediction result can be missed.
+    await openSSEStream(n);
+
+    // 2. POST /simulate — get raw transactions and queue predictions.
     const res = await fetch(`${API}/simulate`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -398,14 +402,12 @@ async function runSimulation() {
     }
     const data = await res.json();
 
-    // 2. Show raw transactions immediately
+    // 3. Show raw transactions immediately
     renderRawTransactions(data.transactions);
     setStatus('running', `Predicting ${n} transactions…`);
 
-    // 3. Open SSE stream for results
-    openSSEStream(n);
-
   } catch(e) {
+    if (sseSource) { sseSource.close(); sseSource = null; }
     setStatus('error', `Error: ${e.message}`);
     document.getElementById('run-btn').disabled = false;
   }
@@ -434,31 +436,67 @@ function renderRawTransactions(transactions) {
 }
 
 function openSSEStream(total) {
-  sseSource = new EventSource(`${API}/simulate/stream`);
+  return new Promise((resolve, reject) => {
+    sseSource = new EventSource(`${API}/simulate/stream`);
+    let connected = false;
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        sseSource.close();
+        sseSource = null;
+        reject(new Error('Live result stream did not connect in time'));
+      }
+    }, 10000);
 
-  sseSource.onmessage = (e) => {
-    const data = JSON.parse(e.data);
-    if (data.type === 'connected') return;
-    if (data.type !== 'result') return;
+    sseSource.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'connected') {
+          connected = true;
+          if (!settled) {
+            settled = true;
+            clearTimeout(timeout);
+            resolve();
+          }
+          return;
+        }
+        if (data.type !== 'result') return;
 
-    receivedCount++;
-    setProgress(receivedCount, total);
-    renderResult(data, receivedCount - 1);
+        receivedCount++;
+        setProgress(receivedCount, total);
+        renderResult(data, receivedCount - 1);
 
-    if (receivedCount >= total) {
-      sseSource.close();
-      sseSource = null;
-      setStatus('done', `Complete — ${total} transactions processed`);
-      document.getElementById('run-btn').disabled = false;
-      document.getElementById('progress-wrap').style.display = 'none';
-    }
-  };
+        if (receivedCount >= total) {
+          sseSource.close();
+          sseSource = null;
+          setStatus('done', `Complete — ${total} transactions processed`);
+          document.getElementById('run-btn').disabled = false;
+          document.getElementById('progress-wrap').style.display = 'none';
+        }
+      } catch {
+        if (!connected && !settled) {
+          settled = true;
+          clearTimeout(timeout);
+          reject(new Error('Invalid response from live result stream'));
+        }
+      }
+    };
 
-  sseSource.onerror = () => {
-    if (receivedCount >= total) return; // already done
-    setStatus('error', 'Stream error — check API server');
-    document.getElementById('run-btn').disabled = false;
-  };
+    sseSource.onerror = () => {
+      if (receivedCount >= total) return;
+      if (!settled) {
+        settled = true;
+        clearTimeout(timeout);
+        sseSource.close();
+        sseSource = null;
+        reject(new Error('Live result stream is unavailable'));
+      } else {
+        setStatus('error', 'Stream disconnected before all results arrived');
+        document.getElementById('run-btn').disabled = false;
+      }
+    };
+  });
 }
 
 function renderResult(result, idx) {

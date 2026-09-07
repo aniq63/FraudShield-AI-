@@ -5,11 +5,12 @@
     <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white" alt="Python 3.11 or newer"></a>
     <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white" alt="FastAPI"></a>
     <a href="https://mlflow.org/"><img src="https://img.shields.io/badge/MLflow-model%20tracking-0194E2?logo=mlflow&logoColor=white" alt="MLflow"></a>
-    <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-frontend-61DAFB?logo=react&logoColor=111827" alt="React"></a>
   </p>
 </div>
 
 FraudShield AI processes simulated financial transactions through a trained fraud model, streams results to a browser dashboard, and generates an explanation for blocked transactions through Groq and LangChain.
+
+### Live App : https://fraud-shield-ai-gx2w.vercel.app/
 
 ## What It Does
 
