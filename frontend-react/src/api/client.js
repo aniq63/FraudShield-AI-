@@ -4,7 +4,7 @@ const API =
   window.location.protocol === 'file:' ||
   LOCAL_DEVS.includes(window.location.hostname)
     ? 'http://127.0.0.1:8000'
-    : 'https://fraudshield-ai-production-78c0.up.railway.app'
+    : 'https://fraudshield-ai-production-510a.up.railway.app'
 
 async function request(path, options = {}) {
   const res = await fetch(`${API}${path}`, {
