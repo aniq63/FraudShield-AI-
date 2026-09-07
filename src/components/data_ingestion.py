@@ -1,49 +1,53 @@
 # Data Ingestion
+import os
 import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import pandas as pd
 
-from src.db.mongo_connection import MongoDBClient
-from src.utils.logging import logger
-from src.utils.exception import FraudShieldException
+from utils.logging import logger
+from utils.exception import FraudShieldException
+
+
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+DATASOURCE_DIR = os.path.join(PROJECT_ROOT, "datasource")
+
+TRAIN_DATA_FILE = os.path.join(DATASOURCE_DIR, "train_sampled.csv")
+TEST_DATA_FILE = os.path.join(DATASOURCE_DIR, "test_sampled.csv")
 
 
 class DataIngestion:
     """
-    Fetches processed transaction data from MongoDB
+    Loads raw transaction data from CSV files in the datasource directory
     and returns it as a pandas DataFrame.
     """
 
-    def __init__(self, collection_name: str, limit: int = None):
-        self.mongo_client = MongoDBClient()
-        self.collection = self.mongo_client.get_collection(collection_name)
+    def __init__(self, file_path: str = None, limit: int = None):
+        self.file_path = file_path or TRAIN_DATA_FILE
         self.limit = limit
 
     def fetch_data(self) -> pd.DataFrame:
         """
-        Fetch documents from MongoDB collection
-        and convert them into pandas DataFrame.
+        Load a CSV file into a pandas DataFrame (with optional row limit).
         """
 
         try:
-            logger.info("Starting data ingestion from MongoDB...")
+            logger.info(f"Starting data ingestion from CSV: {self.file_path}")
 
-            # Fetch documents with optional limit
+            df = pd.read_csv(self.file_path)
+
             if self.limit:
-                logger.info(f"Ingesting up to {self.limit} records from MongoDB...")
-                records = list(self.collection.find().limit(self.limit))
-            else:
-                logger.info("Ingesting all records from MongoDB...")
-                records = list(self.collection.find())
+                logger.info(f"Ingesting up to {self.limit} records...")
+                df = df.head(self.limit)
 
-            if not records:
-                raise ValueError("No records found in MongoDB collection")
-
-            # Convert to DataFrame
-            df = pd.DataFrame(records)
-
-            # Remove MongoDB internal ID
-            if "_id" in df.columns:
-                df.drop(columns=["_id"], inplace=True)
+            if df.empty:
+                raise ValueError(f"No records found in file: {self.file_path}")
 
             logger.info(
                 f"Data ingestion completed successfully. Shape: {df.shape}"

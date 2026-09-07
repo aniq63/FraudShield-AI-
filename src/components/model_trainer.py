@@ -1,8 +1,13 @@
 import os
 import sys
+from pathlib import Path
 import joblib
 import mlflow
 import mlflow.sklearn
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -15,9 +20,13 @@ from sklearn.metrics import (
     recall_score
 )
 
-from src.utils.logging import logger
-from src.utils.exception import FraudShieldException
-from src.cloud.s3_manager import S3Manager
+from utils.logging import logger
+from utils.exception import FraudShieldException
+from utils.mlflow_setup import (
+    init_mlflow,
+    MODEL_ARTIFACT_PATH,
+    PREPROCESSOR_ARTIFACT_PATH,
+)
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -87,15 +96,16 @@ class ModelTrainer:
         try:
             logger.info("Starting training pipeline...")
 
+            init_mlflow()
+
             models = self.get_models()
 
             best_model = None
             best_model_name = None
+            best_run_id = None
             best_recall = 0
 
             os.makedirs("artifacts", exist_ok=True)
-
-            mlflow.set_experiment("FraudShield_AI")
 
             results = []
 
@@ -103,7 +113,7 @@ class ModelTrainer:
 
                 logger.info(f"Training {name}")
 
-                with mlflow.start_run(run_name=name):
+                with mlflow.start_run(run_name=name) as run:
 
                     model.fit(self.X_train, self.y_train)
 
@@ -112,7 +122,20 @@ class ModelTrainer:
                     # log metrics
                     mlflow.log_metrics(metrics)
 
-                    mlflow.sklearn.log_model(model, name)
+                    # NOTE: artifact path is always "model" (not the model's
+                    # display name) so downstream registry/prediction code
+                    # can always find it at runs:/{run_id}/model regardless
+                    # of which algorithm ended up winning.
+                    # serialization_format="cloudpickle": MLflow 3.x defaults
+                    # to "skops", which refuses to (de)serialize XGBoost's
+                    # Booster/XGBClassifier as "untrusted types". cloudpickle
+                    # has no such restriction and is what earlier MLflow
+                    # versions used by default anyway.
+                    mlflow.sklearn.log_model(
+                        model,
+                        MODEL_ARTIFACT_PATH,
+                        serialization_format="cloudpickle",
+                    )
 
                     results.append({
                         "Model": name,
@@ -128,42 +151,39 @@ class ModelTrainer:
                         best_recall = metrics["recall"]
                         best_model = model
                         best_model_name = name
+                        best_run_id = run.info.run_id
 
-            # save best model locally under a consistent path
+            # save best model locally under a consistent path (handy for
+            # quick local debugging; the source of truth is now MLflow)
             model_path = "artifacts/best_model.pkl"
             joblib.dump(best_model, model_path)
 
             logger.info(f"Best model saved: {model_path} (selected: {best_model_name})")
 
-            # save preprocessor artifact, if available
+            # save preprocessor artifact locally, and log it into the SAME
+            # MLflow run as the winning model — this keeps model and
+            # preprocessor permanently in lockstep. At prediction time the
+            # preprocessor is loaded via runs:/{run_id}/preprocessor, where
+            # run_id comes off whichever model version is in Production.
             preprocessor_path = None
             if self.preprocessor is not None:
                 preprocessor_path = "artifacts/preprocessor.pkl"
                 joblib.dump(self.preprocessor, preprocessor_path)
                 logger.info(f"Preprocessor saved: {preprocessor_path}")
 
-            # upload to S3 using the generic best_model path
-            try:
-                s3 = S3Manager()
-                s3_path = s3.upload_file(
-                    model_path,
-                    "models/best_model.pkl"
-                )
-                logger.info(f"Model uploaded to S3: {s3_path}")
-
-                if preprocessor_path is not None:
-                    preprocessor_s3_path = s3.upload_file(
-                        preprocessor_path,
-                        "models/preprocessor.pkl"
-                    )
+                if best_run_id is not None:
+                    with mlflow.start_run(run_id=best_run_id):
+                        mlflow.sklearn.log_model(
+                            self.preprocessor,
+                            PREPROCESSOR_ARTIFACT_PATH,
+                            serialization_format="cloudpickle",
+                        )
                     logger.info(
-                        f"Preprocessor uploaded to S3: {preprocessor_s3_path}"
+                        f"Preprocessor logged into winning run {best_run_id} "
+                        f"(artifact path: '{PREPROCESSOR_ARTIFACT_PATH}')."
                     )
-            except Exception as s3_err:
-                logger.warning(
-                    f"S3 upload failed ({s3_err}). "
-                    "Proceeding with the locally saved artifacts."
-                )
+
+            logger.info(f"Winning run for this training cycle: {best_run_id}")
 
             return best_model, results
 

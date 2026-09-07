@@ -2,12 +2,17 @@ import sys
 import time
 import threading
 import queue
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.simulator.transaction_generator import TransactionGenerator
 from src.inference.predictor import FraudPredictor
 from src.inference.reasoning import FraudReasoningAI
-from src.utils.logging import logger
-from src.utils.exception import FraudShieldException
+from utils.logging import logger
+from utils.exception import FraudShieldException
 
 
 # Shared in-memory queue — producer puts, consumer gets
@@ -24,9 +29,9 @@ class TransactionProducer:
     onto the shared in-memory queue. Does not wait for predictions.
     """
 
-    def __init__(self, collection_name: str = "transactions_data"):
+    def __init__(self, data_file: str = None):
         try:
-            self.generator = TransactionGenerator(collection_name)
+            self.generator = TransactionGenerator(data_file)
             logger.info("TransactionProducer ready.")
         except Exception as e:
             raise FraudShieldException(str(e), sys)
@@ -82,15 +87,12 @@ class FraudPipelineConsumer:
     def __init__(
         self,
         result_callback=None,
-        s3_model_key: str = "models/best_model.pkl",
-        s3_preprocessor_key: str = "models/preprocessor.pkl",
+        stage: str = "Production",
     ):
         try:
-            # Predictor loads both model + preprocessor from S3
-            self.predictor = FraudPredictor(
-                s3_model_key=s3_model_key,
-                s3_preprocessor_key=s3_preprocessor_key,
-            )
+            # Predictor loads both model + preprocessor from the MLflow
+            # registry (hosted on DagsHub) — no S3 involved.
+            self.predictor = FraudPredictor(stage=stage)
 
             self.reasoner = FraudReasoningAI()
 
@@ -195,3 +197,7 @@ class FraudPipelineConsumer:
         )
 
         return result
+
+
+
+

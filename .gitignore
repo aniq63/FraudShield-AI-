@@ -219,7 +219,7 @@ __marimo__/
 
 
 
-# files
+# Files
 mongo_test.py
 demo.py
 # folders
@@ -229,3 +229,8 @@ mlruns
 artifacts
 mlflow.db
 resume.txt
+interview.txt
+notebooks/fraudTrain.csv
+
+# Folders
+docs_folder

@@ -1,12 +1,24 @@
-import io
 import sys
-import joblib
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.cloud.s3_manager import S3Manager
-from src.utils.logging import logger
-from src.utils.exception import FraudShieldException
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+import mlflow
+import mlflow.sklearn
+from mlflow.tracking import MlflowClient
+
+from utils.logging import logger
+from utils.exception import FraudShieldException
+from utils.mlflow_setup import (
+    init_mlflow,
+    EXPERIMENT_NAME,
+    MODEL_NAME,
+    PREPROCESSOR_ARTIFACT_PATH,
+)
 
 
 FRAUD_THRESHOLD = 0.50
@@ -17,31 +29,75 @@ _TARGET_COL     = "transaction_is_fraud"
 
 class FraudPredictor:
     """
-    Loads model + preprocessor from S3 (in-memory, no local disk).
+    Loads model + preprocessor straight from the MLflow Model Registry
+    (hosted on DagsHub) — no S3, no local disk copy.
 
-    Critical fix: enforces the exact column order the preprocessor
-    was fitted on using preprocessor.feature_names_in_.
+    The preprocessor always lives as an artifact inside the SAME run as the
+    model it was fitted alongside (see ModelTrainer + ModelRegistryAndDeploy),
+    so we resolve it via the Production model version's run_id rather than a
+    separate registered name. This guarantees the two never drift apart.
+
+    Critical fix retained from the S3 version: enforces the exact column
+    order the preprocessor was fitted on using preprocessor.feature_names_in_.
     Without this, StandardScaler applies wrong mean/std to wrong columns
     → model receives garbage → everything scores near zero.
     """
 
-    def __init__(
-        self,
-        s3_model_key:        str = "models/best_model.pkl",
-        s3_preprocessor_key: str = "models/preprocessor.pkl",
-    ):
+    def __init__(self, stage: str = "Production"):
         try:
-            s3 = S3Manager()
+            init_mlflow()
 
-            logger.info(f"Loading model from S3: {s3_model_key}")
-            self.model = joblib.load(io.BytesIO(s3.load_object(s3_model_key)))
-            logger.info("Model loaded from S3 successfully.")
+            self.stage      = stage
+            self.model_name = MODEL_NAME
+            self.model_uri  = f"models:/{self.model_name}/{self.stage}"
 
-            logger.info(f"Loading preprocessor from S3: {s3_preprocessor_key}")
-            self.preprocessor = joblib.load(
-                io.BytesIO(s3.load_object(s3_preprocessor_key))
-            )
-            logger.info("Preprocessor loaded from S3 successfully.")
+            logger.info(f"Loading model from MLflow registry: {self.model_uri}")
+            self.model = mlflow.sklearn.load_model(self.model_uri)
+            logger.info("Model loaded from MLflow successfully.")
+
+            # Resolve the run_id behind this Production version, so we can
+            # pull the preprocessor that was logged alongside it.
+            client   = MlflowClient()
+            versions = [
+                version
+                for version in client.search_model_versions(
+                    f"name = '{self.model_name}'"
+                )
+                if version.current_stage == self.stage
+            ]
+            versions.sort(key=lambda version: int(version.version), reverse=True)
+            if not versions:
+                raise FraudShieldException(
+                    f"No model version found in stage '{self.stage}' for "
+                    f"'{self.model_name}'. Run the ML pipeline at least once.",
+                    sys,
+                )
+            run_id = versions[0].run_id
+
+            preprocessor_uri = f"runs:/{run_id}/{PREPROCESSOR_ARTIFACT_PATH}"
+
+            # MLflow 3 stores models logged with log_model as LoggedModel
+            # resources. Resolve the preprocessor's models:/ URI first;
+            # retain the runs:/ URI for older MLflow artifact layouts.
+            experiment = mlflow.get_experiment_by_name(EXPERIMENT_NAME)
+            if experiment is not None and hasattr(client, "search_logged_models"):
+                logged_models = client.search_logged_models(
+                    experiment_ids=[experiment.experiment_id],
+                    max_results=100,
+                )
+                matching_models = [
+                    model
+                    for model in logged_models
+                    if model.name == PREPROCESSOR_ARTIFACT_PATH
+                    and model.source_run_id == run_id
+                    and getattr(getattr(model, "status", None), "value", None) == "READY"
+                ]
+                if matching_models:
+                    preprocessor_uri = matching_models[-1].model_uri
+
+            logger.info(f"Loading preprocessor from MLflow run: {preprocessor_uri}")
+            self.preprocessor = mlflow.sklearn.load_model(preprocessor_uri)
+            logger.info("Preprocessor loaded from MLflow successfully.")
 
             # ── resolve the exact column order the preprocessor expects ──
             # feature_names_in_ is set by sklearn ≥ 1.0 when fit() receives a DataFrame.
@@ -116,11 +172,16 @@ class FraudPredictor:
         # ── 2. FeatureEngineer steps ───────────────────────────────────
 
         # 2a. datetime parsing
+        # These dates are removed before the model transform. Simulator
+        # payloads may omit them, so missing values should not reject a
+        # transaction that still contains the trained model features.
         df["transaction_date"] = pd.to_datetime(
-            df["transaction_date"], errors="coerce"
+            df.get("transaction_date", pd.Series(pd.NaT, index=df.index)),
+            errors="coerce",
         )
         df["buyer_date_of_birth"] = pd.to_datetime(
-            df["buyer_date_of_birth"], errors="coerce"
+            df.get("buyer_date_of_birth", pd.Series(pd.NaT, index=df.index)),
+            errors="coerce",
         )
 
         # 2b. haversine distance buyer ↔ merchant
@@ -178,7 +239,7 @@ class FraudPredictor:
 
         # ── 4. CRITICAL: reorder columns to match training order ───────
         # The ColumnTransformer was fitted on columns in a specific order.
-        # MongoDB returns documents in insertion order which may differ.
+        # Raw input may come in a different order than training data.
         # If we pass columns in the wrong order, StandardScaler applies
         # the wrong mean/std to the wrong feature → garbage predictions.
         df = self._align_columns(df)

@@ -1,462 +1,250 @@
-# FraudShield AI – Real-Time Fraud Detection System
-
 <div align="center">
-
-**Production-Grade Fraud Detection with Machine Learning + LLM Reasoning**
-
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-green?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![XGBoost](https://img.shields.io/badge/XGBoost-ML-orange?style=for-the-badge)](https://xgboost.readthedocs.io/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-NoSQL-green?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
-[![AWS S3](https://img.shields.io/badge/AWS%20S3-Cloud%20Storage-FF9900?style=for-the-badge&logo=amazon-aws)](https://aws.amazon.com/s3/)
-
+  <h1>FraudShield AI</h1>
+  <p>Real-time fraud detection with machine learning, streaming inference, and LLM explanations.</p>
+  <p>
+    <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white" alt="Python 3.11 or newer"></a>
+    <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white" alt="FastAPI"></a>
+    <a href="https://mlflow.org/"><img src="https://img.shields.io/badge/MLflow-model%20tracking-0194E2?logo=mlflow&logoColor=white" alt="MLflow"></a>
+    <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-frontend-61DAFB?logo=react&logoColor=111827" alt="React"></a>
+  </p>
 </div>
 
----
+FraudShield AI processes simulated financial transactions through a trained fraud model, streams results to a browser dashboard, and generates an explanation for blocked transactions through Groq and LangChain.
 
-## Live Demo
+## What It Does
 
-**[Try FraudShield AI Now](https://fraudshields-ai.vercel.app/)** – https://fraudshields-ai.vercel.app/
+- Loads sampled train and test data from `datasource/`.
+- Cleans and standardizes the source schema.
+- Builds distance, log-amount, transaction-hour, buyer-age, and night-transaction features.
+- Trains Logistic Regression, Decision Tree, Random Forest, and XGBoost candidates.
+- Selects the best candidate by recall and logs its model and preprocessor to MLflow.
+- Registers the candidate and promotes it through Staging and Production when its recall improves.
+- Loads the Production model at API startup.
+- Processes transactions through an in-memory queue and background consumer.
+- Sends completed predictions to browser clients with Server-Sent Events.
+- Calls the configured Groq model for blocked-transaction reasoning.
 
-Explore the real-time dashboard, run transaction simulations, and see fraud detection in action!
+## Architecture
 
----
-
-## � Overview
-
-**FraudShield AI** is a production-ready fraud detection system that monitors financial transactions in real-time and predicts whether a transaction is fraudulent before approval. The system combines:
-
-- **Machine Learning Models** (XGBoost, Random Forest, Logistic Regression) for fast, accurate predictions
-- **LLM-Based Reasoning** (Groq/LangChain) for explainable decision-making
-- **Real-Time Streaming Pipeline** for sub-second fraud detection
-- **Professional Dashboard** for transaction monitoring and analytics
-- **AWS S3 Integration** for model persistence and scalability
-- **MongoDB** for flexible transaction data storage
-
----
-
-## ✨ Key Features
-
-### 🚀 Real-Time Processing
-- **Sub-second latency** fraud detection for production transactions
-- **Streaming pipeline** with multi-threaded consumer-producer architecture
-- **Live dashboards** with real-time transaction updates via SSE (Server-Sent Events)
-
-### 🧠 Intelligent Detection
-- **Multi-model ensemble** (XGBoost, Random Forest, Logistic Regression)
-- **Advanced feature engineering** including:
-  - Geographical distance calculation
-  - Night transaction flagging
-  - Category-based patterns
-  - Amount anomaly detection
-- **LLM-powered reasoning** for explainable fraud decisions
-- **Class imbalance handling** with weighted sampling
-
-### 📊 Comprehensive Monitoring
-- **Live dashboard** with transaction statistics and fraud metrics
-- **Historical analytics** with fraud trends and patterns
-- **MLflow integration** for experiment tracking and model versioning
-- **In-memory result store** with SSE real-time streaming
-
-### 🔐 Production-Ready
-- **Containerizable architecture** with FastAPI
-- **CORS-enabled** for frontend integration
-- **Error handling and logging** throughout the pipeline
-- **Scalable database design** with MongoDB
-- **Cloud storage** with AWS S3 for models
-
-### 🎮 Transaction Simulation
-Multiple transaction generation modes for realistic testing:
-- **Normal transactions**: Everyday legitimate purchases
-- **Stolen card attacks**: High-value unauthorized transactions
-- **Geo attacks**: Impossible-distance fraud patterns
-- **Phishing attacks**: Category-based fraud patterns
-
----
-
-## 🏗️ System Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     FraudShield AI Pipeline                      │
-└─────────────────────────────────────────────────────────────────┘
-
-INPUT LAYER
-    ↓
-    ├─ Transaction Generator (Simulator)
-    ├─ Real Transaction Stream
-    └─ API Endpoints
-
-DATA PROCESSING
-    ↓
-    ├─ Data Ingestion (MongoDB)
-    ├─ ETL Pipeline (Extract, Transform, Load)
-    ├─ Feature Engineering
-    └─ Data Preparation & Normalization
-
-ML INFERENCE
-    ↓
-    ├─ Model Loading (S3 → Memory)
-    ├─ Preprocessing (StandardScaler)
-    ├─ Multi-Model Prediction
-    │   ├─ XGBoost (Primary)
-    │   ├─ Random Forest
-    │   ├─ Logistic Regression
-    │   └─ Ensemble voting
-    └─ LLM Reasoning (Groq)
-
-OUTPUT LAYER
-    ↓
-    ├─ FastAPI REST Endpoints
-    ├─ Real-Time Dashboard
-    ├─ Live Analytics
-    └─ Result Store (In-Memory)
+```text
+CSV data
+   |
+   v
+Ingestion -> Transformation -> Feature engineering -> Preparation
+                                                        |
+                                                        v
+                                  Model training -> MLflow/DagsHub registry
+                                                        |
+                                                        v
+Browser -> FastAPI -> Transaction generator -> Queue -> Consumer
+                                                       |       |
+                                                       |       +-> Groq/LangChain reasoning
+                                                       +----------> Prediction and SSE result
 ```
 
----
+The application stores the latest results in a thread-safe in-memory deque with a maximum of 5,000 entries. Results are lost when the process restarts.
 
-## 💾 Dataset
+## Repository Layout
 
-**Dataset**: [Fraud Detection - Kaggle](https://www.kaggle.com/datasets/kartik2112/fraud-detection)
-
-### Dataset Characteristics:
-- **~1.3M transactions** with fraud labels
-- **Features**:
-  - `transaction_amount`: Transaction value (USD)
-  - `transaction_hour`: Hour of day (0-23)
-  - `category`: Transaction category (grocery_pos, shopping_net, etc.)
-  - `buyer_age`: Customer age
-  - `location_coordinates`: Geographical location
-  - `transaction_is_fraud`: Target label (0=Legitimate, 1=Fraud)
-
-### Key Statistics:
-- **Class Distribution**: ~0.2% fraudulent (highly imbalanced)
-- **Fraud Distribution**:
-  - Night transactions: 80.5% fraud rate
-  - Top categories: grocery_pos (34%), shopping_net (22%), gas_transport (17%)
-  - Amount range: $50-$1,250
-  - Buyer age: Fraud avg 59.8 years vs Normal 45.5 years
-
----
-
-## 🛠️ Technology Stack
-
-### Backend & ML
-| Technology | Purpose |
-|-----------|---------|
-| **Python 3.8+** | Core language |
-| **FastAPI** | REST API framework |
-| **XGBoost** | Primary ML model |
-| **scikit-learn** | ML utilities & preprocessing |
-| **Pandas** | Data manipulation |
-| **NumPy** | Numerical computing |
-| **joblib** | Model serialization |
-
-### Data & Storage
-| Technology | Purpose |
-|-----------|---------|
-| **MongoDB** | Transaction database |
-| **AWS S3** | Model & artifact storage |
-| **MLflow** | Experiment tracking |
-
-### LLM & Reasoning
-| Technology | Purpose |
-|-----------|---------|
-| **LangChain** | LLM orchestration |
-| **Groq** | Fast LLM inference |
-
-### Frontend & Monitoring
-| Technology | Purpose |
-|-----------|---------|
-| **HTML5/CSS3/JS** | Dashboard UI |
-| **FastAPI SSE** | Real-time updates |
-
----
-
-## 📦 Installation
-
-> **💡 Want to try it first?** Check out the [live demo](https://fraudshields-ai.vercel.app/) to see FraudShield AI in action before installing locally!
-
-### Prerequisites
-- Python 3.8+
-- MongoDB (local or cloud)
-- AWS S3 bucket (for model storage)
-- Groq API key
-
-### Setup Instructions
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/FraudShield-AI.git
-   cd FraudShield-AI
-   ```
-
-2. **Create virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your credentials:
-   # - MONGO_URI
-   # - AWS_ACCESS_KEY_ID
-   # - AWS_SECRET_ACCESS_KEY
-   # - AWS_S3_BUCKET
-   # - GROQ_API_KEY
-   ```
-
-5. **Verify MongoDB connection**
-   ```bash
-   python mongo_test.py
-   ```
-
-6. **Run the API server**
-   ```bash
-   python main.py
-   ```
-   Server runs at `http://localhost:8000`
-
-7. **Access the dashboard**
-   - Open `frontend/dashboard.html` in your browser
-   - Or navigate to `http://localhost:8000/docs` for API documentation
-
----
-
-## 🚀 Usage
-
-### 1. **Run Demo (Console Output)**
-```bash
-python demo.py                              # 10 stolen_card transactions
-python demo.py --mode geo_attack --n 5     # 5 geo-attack transactions
-python demo.py --mode normal --n 20        # 20 legitimate transactions
-```
-
-### 2. **Train ML Pipeline**
-```python
-from src.pipelines.ml_pipeline import MLPipeline
-
-pipeline = MLPipeline(
-    mongo_collection_name="transactions",
-    limit=10000  # Train on first 10k
-)
-pipeline.run_pipeline()
-```
-
-### 3. **Make Predictions via API**
-```bash
-curl -X POST "http://localhost:8000/predict" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "transaction_amount": 450.00,
-    "transaction_hour": 2,
-    "category": "grocery_pos",
-    "buyer_age": 65,
-    "location_coordinates": [40.7128, -74.0060]
-  }'
-```
-
-### 4. **Real-Time Streaming**
-```bash
-curl -N "http://localhost:8000/stream"
-```
-
-### 5. **Get Transaction History**
-```bash
-curl "http://localhost:8000/results"
-```
-
----
-
-## 📊 Dashboard Previews
-
-### Dashboard Overview
-![Dashboard](images/C1.PNG)
-
-### Analytics & Metrics
-![Analytics](images/c2.PNG)
-
-### Fraud Detection Interface
-![Detection](images/c3.PNG)
-
----
-
-## 🧪 Model Performance
-
-### Training Metrics
-- **Best Model**: XGBoost with balanced class weights
-- **F1 Score**: ~0.85-0.90 (optimized for fraud recall)
-- **Precision**: ~0.82-0.87
-- **Recall**: ~0.88-0.92 (critical for fraud detection)
-- **Training Time**: ~2-5 minutes (10k transactions)
-
-### Inference Performance
-- **Latency**: <100ms per transaction
-- **Throughput**: 10,000+ transactions/second
-- **Model Size**: ~5-10 MB (fits in memory)
-
----
-
-## 📁 Project Structure
-
-```
-FraudShield-AI/
-├── src/
-│   ├── api/
-│   │   └── routes.py              # FastAPI endpoints
-│   ├── components/
-│   │   ├── data_ingestion.py      # MongoDB data fetching
-│   │   ├── data_preparation.py    # Data cleaning
-│   │   ├── data_feature_engineering.py
-│   │   ├── model_trainer.py       # Model training
-│   │   └── model_evaluation.py    # Performance metrics
-│   ├── cloud/
-│   │   └── s3_manager.py          # AWS S3 integration
-│   ├── db/
-│   │   └── mongo_connection.py    # MongoDB client
-│   ├── ETL/
-│   │   ├── extraction.py
-│   │   ├── transformation.py
-│   │   └── load.py
-│   ├── inference/
-│   │   ├── predictor.py           # ML predictions
-│   │   └── reasoning.py           # LLM explanations
-│   ├── pipelines/
-│   │   ├── etl_pipeline.py
-│   │   ├── ml_pipeline.py         # End-to-end ML pipeline
-│   │   └── streaming_pipeline.py  # Real-time processing
-│   ├── simulator/
-│   │   └── transaction_generator.py
-│   └── utils/
-│       ├── logging.py
-│       └── exception.py
+```text
+.
+├── api/
+│   └── routes.py                         FastAPI routes and in-memory result store
+├── datasource/
+│   ├── train_sampled.csv                Training data
+│   └── test_sampled.csv                 Evaluation data
 ├── frontend/
-│   ├── dashboard.html             # Main dashboard UI
-│   ├── index.html
-│   └── simulator.html
-├── notebooks/
-│   └── Fraud Detection system.ipynb
-├── main.py                        # FastAPI server entry point
-├── demo.py                        # Console demo script
-├── requirements.txt
-└── README.md
+│   ├── dashboard.html                    Static monitoring dashboard
+│   ├── index.html                        Static project page
+│   └── simulator.html                    Static transaction simulator
+├── frontend-react/                       Vite and React frontend
+├── src/
+│   ├── components/                       ETL, preparation, training, evaluation, registry
+│   ├── inference/                        ML prediction and LLM reasoning
+│   ├── pipelines/                        Training and streaming pipelines
+│   └── simulator/                        Historical transaction generator
+├── tests/                                Pytest suite
+├── main.py                               FastAPI and Uvicorn entry point
+├── requirements.txt                      Python dependencies
+└── .github/workflows/ci.yml              GitHub Actions test workflow
 ```
 
----
+## Requirements
 
-## 🔄 Pipeline Overview
+- Python 3.11 or newer is used by CI.
+- A Groq API key for LLM reasoning.
+- A DagsHub or compatible MLflow tracking account for training and model loading.
+- Node.js and npm only if using `frontend-react/`.
 
-### ML Pipeline Stages:
-1. **Data Extraction** → Fetch from MongoDB
-2. **Data Transformation** → Clean & normalize
-3. **Feature Engineering** → Create derived features
-4. **Data Preparation** → Split & scale
-5. **Model Training** → Train multiple models
-6. **Model Evaluation** → Compute metrics
-7. **Model Upload** → Save to S3
-8. **MLflow Tracking** → Log experiments
+## Installation
 
-### Streaming Pipeline:
-1. **Transaction Generation** → Create test transactions
-2. **Prediction** → Load model, preprocess, predict
-3. **LLM Reasoning** → Explain decision
-4. **Result Storage** → In-memory + Database
-5. **Real-Time Broadcast** → SSE to dashboard
+Create and activate a virtual environment from the repository root:
 
----
-
-## 🐳 Docker Deployment (Optional)
-
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-CMD ["python", "main.py"]
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-Build and run:
+On macOS or Linux:
+
 ```bash
-docker build -t fraudshield-ai .
-docker run -p 8000:8000 --env-file .env fraudshield-ai
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
----
+## Environment Configuration
 
-## 📈 Monitoring & Logging
+Copy `.env_example` to `.env` and replace the placeholder values:
 
-- **Structured logging** in `src/utils/logging.py`
-- **MLflow dashboard** at `http://localhost:5000` (after `mlflow ui`)
-- **FastAPI Swagger UI** at `http://localhost:8000/docs`
-- **Results stored** in memory (deque with max 5000 entries)
-
----
-
-## 🔑 Environment Variables
-
+```powershell
+Copy-Item .env_example .env
 ```
-MONGO_URI=mongodb+srv://user:password@cluster.mongodb.net/fraudshield
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_S3_BUCKET=your-bucket-name
-AWS_REGION=us-east-1
-GROQ_API_KEY=your-groq-key
+
+Required for the default configuration:
+
+```dotenv
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL_NAME=openai/gpt-oss-20b
+MLFLOW_TRACKING_USERNAME=your_dagshub_username
+MLFLOW_TRACKING_PASSWORD=your_dagshub_token
+```
+
+Optional variables:
+
+```dotenv
+DAGSHUB_REPO_OWNER=aniqramzan5758
+DAGSHUB_REPO_NAME=FraudShield-AI-
+MLFLOW_TRACKING_URI=https://dagshub.com/aniqramzan5758/FraudShield-AI-.mlflow
 HOST=0.0.0.0
 PORT=8000
 DEBUG=false
 ALLOWED_ORIGINS=*
 ```
 
----
+`MLFLOW_TRACKING_PASSWORD` may also be supplied as `DAGSHUB_TOKEN`. Never commit `.env` or expose API keys in frontend code.
 
-## 🤝 Contributing
+## Run the Backend
 
-Contributions are welcome! Please follow these steps:
+From the repository root:
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+```powershell
+python main.py
+```
 
----
+The API listens at `http://127.0.0.1:8000`. Startup loads the Production model and its matching preprocessor before the server reports readiness. The first startup can take several seconds because artifacts are downloaded from MLflow/DagsHub.
 
-## 📄 License
+Interactive API documentation is available at:
 
-This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- OpenAPI schema: `http://127.0.0.1:8000/openapi.json`
 
----
+## Run the Frontend
 
-## 🙋 Support & Contact
+### Static frontend
 
-For questions, issues, or suggestions:
-- **GitHub Issues**: Open an issue on the repository
-- **Email**: your-email@example.com
+Open `frontend/simulator.html` or `frontend/dashboard.html` in a browser after starting the backend. When opened locally, these pages use `http://127.0.0.1:8000` automatically.
 
----
+### React frontend
 
-## 🎓 Learning Resources
+```powershell
+cd frontend-react
+npm install
+npm run dev
+```
 
-- [XGBoost Documentation](https://xgboost.readthedocs.io/)
-- [FastAPI Guide](https://fastapi.tiangolo.com/)
-- [MongoDB Python Driver](https://pymongo.readthedocs.io/)
-- [LangChain Documentation](https://python.langchain.com/)
-- [Kaggle Fraud Detection Dataset](https://www.kaggle.com/datasets/kartik2112/fraud-detection)
+For a production build:
 
----
+```powershell
+npm run build
+npm run preview
+```
 
-<div align="center">
+The React client uses the same REST and SSE API as the static frontend.
 
-**Made with ❤️ for secure financial transactions**
+## API Endpoints
 
-⭐ If this project helped you, please consider giving it a star!
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Queue and result-store health |
+| `POST` | `/simulate` | Generate and queue transactions |
+| `GET` | `/simulate/stream` | Stream prediction results with SSE |
+| `GET` | `/dashboard/stats` | Session statistics and breakdowns |
+| `GET` | `/dashboard/feed` | Recent processed transactions |
+| `GET` | `/dashboard/alerts` | Recent blocked transactions and reasoning |
+| `POST` | `/dashboard/reset` | Clear in-memory session results |
 
-</div>
+Example simulation request:
+
+```powershell
+curl.exe -X POST http://127.0.0.1:8000/simulate `
+  -H "Content-Type: application/json" `
+  -d '{"mode":"stolen_card","num_transactions":5}'
+```
+
+Supported modes are `normal`, `stolen_card`, `geo_attack`, and `velocity_burst`. Use an attack mode to produce blocked transactions and LLM explanations.
+
+## Train and Register a Model
+
+The training pipeline uses the sampled CSV files by default:
+
+```powershell
+python -m src.pipelines.ml_pipeline --limit 30000
+```
+
+The `--limit` option limits training rows. Omit it to use the complete training sample. The pipeline evaluates candidates, selects the highest-recall run, logs the preprocessor into the same MLflow run, and manages the model registry lifecycle.
+
+You can also call the pipeline from Python:
+
+```python
+from src.pipelines.ml_pipeline import MLPipeline
+
+MLPipeline(limit=30000).run_pipeline()
+```
+
+## Testing
+
+Run the complete test suite:
+
+```powershell
+python -m pytest tests -q
+```
+
+The same command runs in GitHub Actions on Python 3.11. Tests cover ingestion, transformation, feature engineering, preparation, model components, prediction preprocessing, reasoning helpers, simulation, streaming orchestration, routes, and utilities.
+
+For a focused local check:
+
+```powershell
+python -m pytest -q tests/test_predictor.py tests/test_reasoning.py tests/test_streaming_pipeline.py
+```
+
+## Model and Inference Details
+
+The fitted preprocessor one-hot encodes `buyer_gender` and `category`, then standardizes numeric features. The production predictor uses the following model features:
+
+```text
+category
+buyer_gender
+transaction_hour
+buyer_age
+distance_km
+transaction_amount_log
+is_night_transaction
+```
+
+A fraud probability of `0.50` or higher produces a `BLOCKED` decision. LLM reasoning is requested only for blocked transactions. If the provider returns no visible content, the API returns an automated risk summary so the alert remains informative.
+
+## CI
+
+The workflow in `.github/workflows/ci.yml` runs on pushes and pull requests targeting `main`:
+
+1. Installs Python 3.11.
+2. Installs `requirements.txt`.
+3. Runs `python -m pytest tests -q`.
+
+## License
+
+This project is distributed under the MIT License. See [LICENSE](LICENSE).

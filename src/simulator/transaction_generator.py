@@ -1,11 +1,17 @@
 import sys
 import random
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from src.components.data_ingestion import DataIngestion
-from src.utils.logging import logger
-from src.utils.exception import FraudShieldException
+from src.components.data_transformation import DataTransformer
+from utils.logging import logger
+from utils.exception import FraudShieldException
 
 
 # ── Fraud distribution facts from investigate_model.py ────────────────────
@@ -80,7 +86,8 @@ def _pick_older_age(txn: dict) -> dict:
 
 class TransactionGenerator:
     """
-    Generates realistic transactions for simulation using historical MongoDB data.
+    Generates realistic transactions for simulation using historical data
+    loaded from the datasource directory.
 
     All mutations are calibrated against the actual training fraud distribution
     found by investigate_model.py. The model's top signals are:
@@ -90,11 +97,12 @@ class TransactionGenerator:
         4. category               varies             — fraud-dominant categories used
     """
 
-    def __init__(self, collection_name: str, limit: int = 10000):
+    def __init__(self, data_file: str = None, limit: int = 10000):
         try:
             logger.info("Loading historical transactions...")
-            ingestion = DataIngestion(collection_name, limit=limit)
-            self.df = ingestion.fetch_data()
+            ingestion = DataIngestion(data_file, limit=limit)
+            raw_df = ingestion.fetch_data()
+            self.df = DataTransformer(raw_df).transform()
             logger.info(f"Loaded transactions base shape: {self.df.shape}")
         except Exception as e:
             raise FraudShieldException(str(e), sys)

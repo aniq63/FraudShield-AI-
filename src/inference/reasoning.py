@@ -1,14 +1,19 @@
 import os
 import sys
 import logging
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from dotenv import load_dotenv
 
-from src.utils.logging import logger
-from src.utils.exception import FraudShieldException
+from utils.logging import logger
+from utils.exception import FraudShieldException
 
 
 # ── System prompt ──────────────────────────────────────────────────────────
@@ -94,7 +99,9 @@ class FraudReasoningAI:
                 model=self.model_name,
                 api_key=api_key,
                 temperature=0.2,      # low temp = consistent, factual output
-                max_tokens=400,
+                # GPT-OSS uses part of the completion budget for internal
+                # reasoning before emitting the visible explanation.
+                max_tokens=800,
             )
 
             # prompt → LLM → plain string
@@ -129,7 +136,7 @@ class FraudReasoningAI:
         str — structured reasoning report from the LLM
         """
         try:
-            transaction_row = self._format_transaction(transaction)
+            transaction_row = self._format_reasoning_transaction(transaction)
             model_predictions = self._format_prediction(prediction)
 
             logger.info(
@@ -137,12 +144,19 @@ class FraudReasoningAI:
                 f"prob={prediction.get('fraud_probability')}"
             )
 
-            reasoning = self.chain.invoke(
-                {
-                    "transaction_row": transaction_row,
-                    "model_predictions": model_predictions,
-                }
-            )
+            prompt_values = {
+                "transaction_row": transaction_row,
+                "model_predictions": model_predictions,
+            }
+            reasoning = ""
+            for _ in range(2):
+                reasoning = self.chain.invoke(prompt_values)
+                if reasoning and reasoning.strip():
+                    break
+
+            if not reasoning or not reasoning.strip():
+                logger.warning("LLM returned empty reasoning; using risk summary.")
+                return self._fallback_reasoning(transaction, prediction)
 
             logger.info("LLM reasoning received.")
             return reasoning.strip()
@@ -191,6 +205,36 @@ class FraudReasoningAI:
             lines.append(f"  {k}: {v}")
 
         return "\n".join(lines) if lines else "(no transaction data)"
+
+    def _format_reasoning_transaction(self, transaction: dict) -> str:
+        """Keep the fraud explanation prompt focused on model-relevant fields."""
+        keys = (
+            "transaction_amount",
+            "category",
+            "transaction_hour",
+            "buyer_age",
+            "distance_km",
+            "is_night_transaction",
+            "buyer_gender",
+        )
+        focused = {key: transaction.get(key) for key in keys if key in transaction}
+        return self._format_transaction(focused)
+
+    def _fallback_reasoning(self, transaction: dict, prediction: dict) -> str:
+        """Keep blocked alerts useful when the provider returns no content."""
+        factors = []
+        if transaction.get("is_night_transaction") or transaction.get("transaction_hour", 12) >= 22 or transaction.get("transaction_hour", 12) <= 3:
+            factors.append("late-night activity")
+        if transaction.get("transaction_amount", 0) >= 400:
+            factors.append("elevated transaction amount")
+        if transaction.get("distance_km", 0) >= 100:
+            factors.append("unusual geographic distance")
+        factor_text = ", ".join(factors) or "the combined transaction risk signals"
+        return (
+            f"Automated risk summary: transaction blocked with a "
+            f"{prediction.get('fraud_probability', 0) * 100:.1f}% fraud probability. "
+            f"Risk factors: {factor_text}."
+        )
 
     def _format_prediction(self, prediction: dict) -> str:
         """
