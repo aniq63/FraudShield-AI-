@@ -98,6 +98,7 @@ export default function Dashboard() {
   const [feedCount, setFeedCount] = useState(0)
   const [health, setHealth] = useState(null)
   const [sseState, setSseState] = useState('connecting')
+  const [apiError, setApiError] = useState('')
   const [lastRefresh, setLastRefresh] = useState('—')
   const [fraudRateHistory, setFraudRateHistory] = useState([])
   const feedRef = useRef([])
@@ -107,9 +108,11 @@ export default function Dashboard() {
     try {
       const d = await api.getHealth()
       setHealth(d)
+      setApiError('')
       setLastRefresh(new Date().toLocaleTimeString())
     } catch {
       setHealth(null)
+      setApiError('Backend is unavailable. Check the API URL and confirm the server is running.')
     }
   }, [])
 
@@ -117,13 +120,14 @@ export default function Dashboard() {
     try {
       const d = await api.getStats()
       setStats(d)
+      setApiError('')
       setFraudRateHistory((prev) => {
         const next = [...prev, d.fraud_rate_pct]
         if (next.length > 40) next.shift()
         return next
       })
     } catch {
-      /* ignore */
+      setApiError('Unable to load dashboard data from the backend.')
     }
   }, [])
 
@@ -141,7 +145,7 @@ export default function Dashboard() {
         setAlertCount(a.count)
       }
     } catch {
-      /* ignore */
+      setApiError('Unable to load the transaction feed. Check the backend connection.')
     }
   }, [])
 
@@ -150,9 +154,12 @@ export default function Dashboard() {
   }, [fetchStats, fetchFeedAndAlerts, checkHealth])
 
   useEffect(() => {
-    fetchAll()
+    const initialFetch = window.setTimeout(fetchAll, 0)
     const iv = setInterval(fetchStats, 4000)
-    return () => clearInterval(iv)
+    return () => {
+      window.clearTimeout(initialFetch)
+      clearInterval(iv)
+    }
   }, [fetchAll, fetchStats])
 
   const onResult = useCallback(({ type, data }) => {
@@ -198,6 +205,14 @@ export default function Dashboard() {
           Refresh
         </button>
       </div>
+
+      {apiError && (
+        <div className="connection-banner" role="alert">
+          <span className="connection-banner-dot" />
+          <span>{apiError}</span>
+          <button className="connection-banner-action" onClick={fetchAll}>Retry</button>
+        </div>
+      )}
 
       <div className="stat-grid">
         <StatCard

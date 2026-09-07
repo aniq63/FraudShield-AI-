@@ -61,7 +61,12 @@ export default function Simulator() {
   const runningRef = useRef(false)
 
   const handleResult = useCallback(({ type, data }) => {
-    if (type === 'result') {
+    if (type === 'sse-error' && runningRef.current) {
+      setState('error')
+      setStatusMsg('Live result stream unavailable — retry the simulation')
+      setToast('The backend accepted the request but the live result stream disconnected.')
+      runningRef.current = false
+    } else if (type === 'result') {
       receivedRef.current += 1
       setProgress({ done: receivedRef.current, total: totalRef.current })
       setResults((prev) => [{ data, idx: receivedRef.current - 1 }, ...prev])

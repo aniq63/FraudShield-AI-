@@ -177,6 +177,31 @@ input[type=range]::-webkit-slider-thumb{
 }
 .empty-icon{font-size:40px;opacity:.4}
 .empty-text{font-size:14px;font-family:var(--mono)}
+
+/* clarity pass: match the operational React interface */
+:root{--bg:#0b1118;--panel:#141e29;--teal:#71d8d5;--teal-dim:rgba(113,216,213,.12);--light:#f4f7f8;--muted:#9aabb5;--border:rgba(180,198,210,.16);--sans:'DM Sans','Segoe UI',sans-serif}
+body{background:var(--bg);font-family:var(--sans)}
+.grid-bg{opacity:.35;background-image:linear-gradient(rgba(133,173,182,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(133,173,182,.035) 1px,transparent 1px);animation:none}
+nav{height:68px;padding:0 32px;background:rgba(11,17,24,.96);border-bottom-color:var(--border)}
+.nav-links{gap:6px;text-transform:none;letter-spacing:.01em}
+.nav-links a{padding:8px 14px;border-radius:5px}
+.nav-links a:hover,.nav-links a.active{background:var(--teal-dim);color:var(--teal)}
+.page{padding:102px 36px 72px;max-width:1440px}
+.page-header{margin-bottom:30px}.page-title{font-size:30px;letter-spacing:-.025em}.page-desc{color:#aebdc4;max-width:760px}
+.sim-layout{grid-template-columns:390px minmax(0,1fr);gap:18px}
+.control-panel,.status-bar,.result-card{border-radius:7px;background:#141e29;border-color:var(--border)}
+.control-panel{padding:24px;gap:26px}
+.mode-btn{min-height:122px;align-items:flex-start;text-align:left;padding:14px;border-radius:5px;background:#101923}
+.mode-btn.selected{border-color:var(--teal);background:rgba(47,158,170,.14);box-shadow:inset 3px 0 var(--teal)}
+.mode-btn .mode-icon{display:grid;width:27px;height:27px;place-items:center;border:1px solid rgba(113,216,213,.4);border-radius:4px;color:var(--teal);font-family:var(--mono);font-size:10px}
+.mode-btn .mode-desc{text-align:left;font-size:11px}
+.run-btn{border-radius:5px;background:#287f8b}.run-btn:hover:not(:disabled){background:#3199a1}
+.data-table th{background:#182431;color:#aebdc4}.data-table td{color:#aebdc4}.data-table tr:hover td{background:rgba(113,216,213,.06)}
+.result-card.blocked{background:linear-gradient(90deg,rgba(251,113,133,.08),#141e29 40%)}
+.result-card.approved{background:linear-gradient(90deg,rgba(52,211,153,.07),#141e29 40%)}
+.rc-reasoning{color:#c7d3d8;background:rgba(113,216,213,.035);padding:12px;border-radius:4px}
+@media(max-width:1000px){.sim-layout{grid-template-columns:1fr}.control-panel{position:static}}
+@media(max-width:620px){nav{padding:0 18px}.page{padding:94px 16px 52px}.nav-links{gap:0}.nav-links a{padding:7px 8px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -209,22 +234,22 @@ input[type=range]::-webkit-slider-thumb{
         <div class="panel-section-title">01 — select attack mode</div>
         <div class="mode-grid">
           <button class="mode-btn selected" data-mode="normal">
-            <span class="mode-icon">🟢</span>
+            <span class="mode-icon">01</span>
             <span class="mode-label">Normal</span>
             <span class="mode-desc">Baseline transaction behaviour</span>
           </button>
           <button class="mode-btn" data-mode="stolen_card">
-            <span class="mode-icon">💳</span>
+            <span class="mode-icon">02</span>
             <span class="mode-label">Stolen Card</span>
             <span class="mode-desc">High-value irregular purchases</span>
           </button>
           <button class="mode-btn" data-mode="geo_attack">
-            <span class="mode-icon">🌍</span>
+            <span class="mode-icon">03</span>
             <span class="mode-label">Geo Attack</span>
             <span class="mode-desc">Impossible location anomaly</span>
           </button>
           <button class="mode-btn" data-mode="velocity_burst">
-            <span class="mode-icon">⚡</span>
+            <span class="mode-icon">04</span>
             <span class="mode-label">Velocity Burst</span>
             <span class="mode-desc">Rapid late-night transactions</span>
           </button>
@@ -302,7 +327,7 @@ input[type=range]::-webkit-slider-thumb{
 
       <!-- empty -->
       <div class="empty-state" id="empty-state">
-        <span class="empty-icon">⬡</span>
+        <span class="empty-icon">—</span>
         <span class="empty-text">No simulation running.<br/>Configure attack mode and hit RUN.</span>
       </div>
     </div>
@@ -312,7 +337,7 @@ input[type=range]::-webkit-slider-thumb{
 <script>
 const API = (window.location.protocol === 'file:' || ['localhost', '127.0.0.1'].includes(window.location.hostname))
   ? 'http://127.0.0.1:8000'
-  : 'https://fraudshield-ai-production-78c0.up.railway.app';
+  : 'https://fraudshield-ai-production-510a.up.railway.app';
 let selectedMode = 'normal';
 let currentTotal = 0;
 let receivedCount = 0;

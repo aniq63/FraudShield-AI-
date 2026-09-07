@@ -170,6 +170,22 @@ nav{
 .feed-scroll{max-height:360px;overflow-y:auto}
 .feed-scroll::-webkit-scrollbar{width:3px}
 .feed-scroll::-webkit-scrollbar-thumb{background:rgba(0,173,181,.25)}
+
+/* clarity pass: match the operational React interface */
+:root{--bg:#0b1118;--panel:#141e29;--panel2:#182431;--teal:#71d8d5;--teal-dim:rgba(113,216,213,.12);--light:#f4f7f8;--muted:#9aabb5;--border:rgba(180,198,210,.16);--sans:'DM Sans','Segoe UI',sans-serif}
+html,body{background:var(--bg);font-family:var(--sans)}
+body::before{display:none}
+nav{height:68px;padding:0 32px;background:rgba(11,17,24,.96);border-bottom-color:var(--border)}
+.nav-links{gap:6px;text-transform:none;letter-spacing:.01em}.nav-links a{padding:8px 14px;border-radius:5px}.nav-links a:hover,.nav-links a.active{background:var(--teal-dim);color:var(--teal)}
+.page{padding:84px 36px 72px;max-width:1440px;gap:22px}
+.stat-row{gap:12px}.stat-card,.chart-card,.feed-wrap,.alerts-panel,.monitor-card{border-radius:7px;background:rgba(20,30,41,.96);border-color:var(--border)}
+.stat-card{min-height:132px;padding:22px 24px}.stat-card::before{height:3px;opacity:.8}.section-title,.stat-label,.monitor-label{color:#aebdc4}
+.chart-row{grid-template-columns:.9fr 1.25fr 1fr;gap:12px}.chart-card{min-height:246px;padding:20px}
+.main-cols{grid-template-columns:minmax(0,1fr) 390px;gap:12px}
+.feed-table th{background:#182431;color:#aebdc4}.feed-table td{color:#aebdc4}.feed-table tr:hover td{background:rgba(113,216,213,.06)}
+.alerts-hd,.alerts-panel>div:first-child{background:rgba(255,255,255,.015)}.alert-card{background:#17222d;border-left-width:3px;border-radius:5px}.alert-card:hover{background:#1d2a37}.alert-reasoning{color:#c7d3d8;background:rgba(251,113,133,.045);padding:10px;border-radius:4px}
+@media(max-width:1000px){.chart-row{grid-template-columns:1fr}.main-cols{grid-template-columns:1fr}}
+@media(max-width:620px){nav{padding:0 18px}.page{padding:84px 16px 52px}.nav-links{gap:0}.nav-links a{padding:7px 8px;font-size:12px}.stat-row{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -299,7 +315,7 @@ nav{
               </tr>
             </thead>
             <tbody id="feed-tbody">
-              <tr><td colspan="7"><div class="empty"><span class="empty-icon">⬡</span><span class="empty-text">No transactions yet.<br/>Run a simulation to see live data.</span></div></td></tr>
+              <tr><td colspan="7"><div class="empty"><span class="empty-icon">—</span><span class="empty-text">No transactions yet.<br/>Run a simulation to see live data.</span></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -322,14 +338,14 @@ nav{
         <div style="padding:12px 14px;border-bottom:1px solid var(--border)">
           <div class="section-hd">
             <div class="section-title" style="color:var(--danger)">
-              🔴 fraud alerts
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:3px"></span> fraud alerts
               <span class="count-pill" style="background:var(--danger-dim);color:var(--danger);border-color:var(--danger-border)" id="alert-count">0</span>
             </div>
             <span style="font-family:var(--mono);font-size:9px;color:var(--muted)">click to expand</span>
           </div>
         </div>
         <div class="alerts-scroll" id="alerts-list">
-          <div class="empty"><span class="empty-icon">🛡</span><span class="empty-text">No fraud alerts yet.<br/>Run an attack simulation<br/>to see blocked transactions.</span></div>
+          <div class="empty"><span class="empty-icon">—</span><span class="empty-text">No fraud alerts yet.<br/>Run an attack simulation<br/>to see blocked transactions.</span></div>
         </div>
       </div>
     </div>
@@ -340,7 +356,7 @@ nav{
 <script>
 const API = (window.location.protocol === 'file:' || ['localhost', '127.0.0.1'].includes(window.location.hostname))
   ? 'http://127.0.0.1:8000'
-  : 'https://fraudshield-ai-production-78c0.up.railway.app';
+  : 'https://fraudshield-ai-production-510a.up.railway.app';
 
 // ── state ──────────────────────────────────────────────────────────────────
 let fraudRateHistory = [];  // for sparkline
