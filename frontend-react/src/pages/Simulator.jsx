@@ -5,10 +5,10 @@ import EmptyState from '../components/EmptyState'
 import { cleanKey, esc, fmtMoney } from '../utils/format'
 
 const MODES = [
-  { key: 'normal', icon: '🟢', label: 'Normal', desc: 'Baseline transaction behaviour' },
-  { key: 'stolen_card', icon: '💳', label: 'Stolen Card', desc: 'High-value irregular purchases' },
-  { key: 'geo_attack', icon: '🌍', label: 'Geo Attack', desc: 'Impossible location anomaly' },
-  { key: 'velocity_burst', icon: '⚡', label: 'Velocity Burst', desc: 'Rapid late-night transactions' },
+  { key: 'normal', icon: '01', label: 'Normal', desc: 'Baseline transaction behaviour' },
+  { key: 'stolen_card', icon: '02', label: 'Stolen Card', desc: 'High-value irregular purchases' },
+  { key: 'geo_attack', icon: '03', label: 'Geo Attack', desc: 'Impossible location anomaly' },
+  { key: 'velocity_burst', icon: '04', label: 'Velocity Burst', desc: 'Rapid late-night transactions' },
 ]
 
 function ResultCard({ r }) {
@@ -318,7 +318,7 @@ export default function Simulator() {
 
           {state !== 'running' && rawTxns.length === 0 && results.length === 0 && (
             <EmptyState
-              icon="⬡"
+              icon="—"
               text={'No simulation running.\nConfigure attack mode and hit RUN.'}
             />
           )}

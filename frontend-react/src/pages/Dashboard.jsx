@@ -298,7 +298,7 @@ export default function Dashboard() {
             ) : (
               <div style={{ padding: 14 }}>
                 <EmptyState
-                  icon="⬡"
+                  icon="—"
                   text={`No transactions yet.\nRun a simulation to see live data.`}
                 />
               </div>
@@ -317,7 +317,7 @@ export default function Dashboard() {
             <div className="alerts-hd">
               <div className="section-hd" style={{ margin: 0 }}>
                 <div className="section-title" style={{ color: 'var(--danger)' }}>
-                  <span>🔴</span> fraud alerts
+                  <span className="alert-marker" aria-hidden="true" /> fraud alerts
                   <span className="count-pill danger">{alertCount}</span>
                 </div>
                 <span className="mono" style={{ fontSize: 9, color: 'var(--muted)' }}>
@@ -330,7 +330,7 @@ export default function Dashboard() {
                 alerts.map((a, i) => <AlertCard key={`${a.time}-${i}`} a={a} />)
               ) : (
                 <EmptyState
-                  icon="🛡"
+                  icon="—"
                   text={`No fraud alerts yet.\nRun an attack simulation\nto see blocked transactions.`}
                 />
               )}
