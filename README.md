@@ -10,6 +10,20 @@
 
 FraudShield AI processes simulated financial transactions through a trained fraud model, streams results to a browser dashboard, and generates an explanation for blocked transactions through Groq and LangChain.
 
+## Screenshots
+
+<p align="center">
+  <img src="images/SS1.PNG" alt="FraudShield AI dashboard screenshot" width="900" />
+</p>
+
+<p align="center">
+  <img src="images/SS2.PNG" alt="FraudShield AI simulator screenshot" width="900" />
+</p>
+
+<p align="center">
+  <img src="images/SS3.PNG" alt="FraudShield AI UI screenshot" width="900" />
+</p>
+
 ## What It Does
 
 - Loads sampled train and test data from `datasource/`.
